@@ -1,0 +1,33 @@
+package com.jpmc.cwoc.dao.cwoc.ctrToEmp;
+
+import com.jpmc.cwoc.common.CtrToEmpVO;
+import com.jpmc.cwoc.cwoc.worker.TerminateWorkerVO;
+import com.jpmc.cwoc.util.constants.CwocConstants;
+import com.jpmc.cwoc.util.rowMappers.CtrToEmpMapper;
+import com.jpmc.cwoc.util.rowMappers.NaturalExpirationTerminationMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class CtrToEmpDao {
+    @Autowired
+    @Qualifier("cwocNamedJbcTemplate")
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    public List<CtrToEmpVO> getCtrToDaoList(boolean isTempWorker)
+    {
+        String query="";
+                if(isTempWorker)
+                    query= CwocConstants.CTR_TO_EMP_TEMP_WORKER;
+                else
+                    query=CwocConstants.CTR_TO_EMP;
+        List<CtrToEmpVO> ctrToEmpVOS = namedParameterJdbcTemplate.query(query,
+                (new MapSqlParameterSource()), new CtrToEmpMapper());
+
+        return ctrToEmpVOS;
+    }
+}
