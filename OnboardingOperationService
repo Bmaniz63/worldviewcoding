@@ -1,0 +1,483 @@
+package com.jpmc.cwoc.cwoc.onboarding;
+
+import com.google.common.base.Strings;
+import com.jpmc.cwoc.common.CurrentUser;
+import com.jpmc.cwoc.common.LoggedInUserVO;
+import com.jpmc.cwoc.common.ViewComboPairVO;
+import com.jpmc.cwoc.common.WorkerVersionService;
+import com.jpmc.cwoc.common.audit.AuditUtilService;
+import com.jpmc.cwoc.common.audit.WorkerAuditService;
+import com.jpmc.cwoc.cwoc.master.DispositionCodeService;
+import com.jpmc.cwoc.cwoc.worker.TempWorkerService;
+import com.jpmc.cwoc.cwoc.worker.WorkerService;
+import com.jpmc.cwoc.cwoc.worker.WorkerTenureService;
+import com.jpmc.cwoc.entities.cwoc.assignment.*;
+import com.jpmc.cwoc.entities.cwoc.contract.ContractKey;
+import com.jpmc.cwoc.entities.cwoc.contract.ContractMasterEntity;
+import com.jpmc.cwoc.entities.cwoc.master.RtwBlocksEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.TempWorkerEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerTenureEntity;
+import com.jpmc.cwoc.enums.Dispositioncode;
+import com.jpmc.cwoc.enums.SidAction;
+import com.jpmc.cwoc.mappers.*;
+import com.jpmc.cwoc.repository.contract.ContractMasterRepository;
+import com.jpmc.cwoc.repository.cwoc.communication.CommunicationRepository;
+import com.jpmc.cwoc.repository.cwoc.master.RTWBlocksRepository;
+import com.jpmc.cwoc.repository.cwoc.worker.TempWorkerRepository;
+import com.jpmc.cwoc.repository.cwoc.worker.WorkerTenureRepository;
+import com.jpmc.cwoc.repository.cwoc.worker.WorkersRepository;
+import com.jpmc.cwoc.repository.cwoc.assignment.AssignmentRepository;
+import com.jpmc.cwoc.utils.AuditInfo;
+import com.jpmc.cwoc.utils.CwocUtility;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.jpmc.cwoc.utils.CwocUtility.formateDate;
+
+@Service
+public class OnboardingOperationService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OnboardingOperationService.class);
+    @Autowired
+    private WorkersRepository workersRepository;
+    @Autowired
+    private AssignmentRepository assignmentRepository;
+    @Autowired
+    private AutowireCapableBeanFactory autowireCapableBeanFactory;
+    @Autowired
+    private DispositionCodeService dispositionCodeService;
+    @Autowired
+    private RTWBlocksRepository rtwBlocksRepository;
+    private CurrentUser currentUser;
+    private LoggedInUserVO user = new LoggedInUserVO();
+    @Autowired
+    HttpServletRequest request;
+    @Autowired
+    private WorkerAuditService workerAuditService;
+    @Autowired
+    private WorkerTenureService workerTenureService;
+    @Autowired
+    private WorkerTenureRepository workerTenureRepository;
+    @Autowired
+    private AuditUtilService auditUtilService;
+    @Autowired
+    WorkerVersionService workerVersionService;
+    @Autowired
+    ContractMasterRepository contractMasterRepository;
+    @Autowired
+    private TempWorkerRepository tempWorkerRepository;
+    @Autowired
+    CommunicationRepository communicationRepository;
+
+    @Autowired
+    OnboardingOperationService(CurrentUser currentUser) {
+        this.currentUser = currentUser;
+    }
+
+    @Autowired
+    TempWorkerService tempWorkerService;
+
+    @Autowired
+    WorkerService workerService;
+
+    @Transactional
+    public OnboardingWorkerDetailsVO saveWorker(OnboardingWorkerDetailsVO onboardingWorkerDetailsVO) throws ParseException {
+
+        try {
+            LOGGER.info("Begin of saveWOrker Method..");
+            String userSID = request.getHeader("userSID");
+            user = new LoggedInUserVO();
+            user.setSID(userSID);
+            WorkerEntity workerEntity = null;
+            TempWorkerEntity tempWorkerEntity = null;
+            WorkerEntity workerEntityOld = workersRepository.getWorkerBySid(onboardingWorkerDetailsVO.getWorkerVO().getSid());
+            LOGGER.info("Before checking istempworker..");
+            if (!onboardingWorkerDetailsVO.getIsTempWorker()) {
+                LOGGER.info("Not a temp worker");
+                workerEntity = new WorkerMapper().map(onboardingWorkerDetailsVO.getWorkerVO());
+
+                if (Objects.nonNull(onboardingWorkerDetailsVO.getWorkerTenureVO()) && Objects.nonNull(onboardingWorkerDetailsVO.getWorkerVO().getSid())) {
+                    onboardingWorkerDetailsVO.getWorkerTenureVO().setSid(onboardingWorkerDetailsVO.getWorkerVO().getSid());
+                    WorkerTenureEntity workerTenureEntityNew = new WorkerTenureMapper().map(onboardingWorkerDetailsVO.getWorkerTenureVO());
+                    workerEntity.setWorkerTenureEntity(workerTenureEntityNew);
+                }
+            } else {
+                LOGGER.info("Its a temp worker");
+                tempWorkerEntity = new WorkerMapper().mapTemp(onboardingWorkerDetailsVO.getWorkerVO());
+            }
+            LOGGER.info("Calling AssignmentMapper");
+            AssignmentEntity oldAssignmentEntity = assignmentRepository.getByAssignmentId(onboardingWorkerDetailsVO.getAssignmentVO().getId());
+            AssignmentEntity assignmentEntity = new AssignmentMapper().map(onboardingWorkerDetailsVO.getAssignmentVO());
+            //SidCreationTime Retained
+            assignmentEntity.setSidCreatedTime(oldAssignmentEntity.getSidCreatedTime());
+            //Get Costcenter from CostcenterVo
+            assignmentEntity.setCostCenter(onboardingWorkerDetailsVO.getCostCenterVO().getCostCenterId());
+            LOGGER.info("Calling VMOMapper");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getVmoManagedVO())) {
+                onboardingWorkerDetailsVO.getVmoManagedVO().setAssignmentId(assignmentEntity.getId());
+                VMOManagedEntity vmoManagedEntity = new VMOManagedWorkerMapper().map(onboardingWorkerDetailsVO.getVmoManagedVO());
+                assignmentEntity.setVmoManagedEntity(vmoManagedEntity);
+            }
+            if (assignmentEntity.getHireDate() != null)
+                if (!formateDate(oldAssignmentEntity.getHireDate()).equals(formateDate(assignmentEntity.getHireDate()))) {
+                    WorkerTenureEntity workerTenureEntity = workerTenureRepository.findBySid(onboardingWorkerDetailsVO.getWorkerTenureVO().getSid());
+                    if (Objects.nonNull(workerTenureEntity)) {
+                        if (Objects.nonNull(workerEntity.getWorkerTenureEntity()))
+                            workerEntity.getWorkerTenureEntity().setTenureDate(new java.sql.Date(workerTenureService.newTenureUpdate(onboardingWorkerDetailsVO.getWorkerVO().getSid(), assignmentEntity.getHireDate(), SidAction.UPDATE).getTime()));
+                    } else {
+                        if (Objects.nonNull(workerEntity)) {
+                            workerTenureEntity = new WorkerTenureEntity();
+                            workerTenureEntity.setSid(workerEntity.getSid());
+                            workerTenureEntity.setTenureDate(assignmentEntity.getHireDate());
+                            workerEntity.setWorkerTenureEntity(workerTenureEntity);
+                        }
+                    }
+                }
+
+            LOGGER.info("Before contract mapper & Save");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getContractMasterVO())) {
+                if (!Strings.isNullOrEmpty(onboardingWorkerDetailsVO.getAssignmentVO().getContractNumber())
+                        && Objects.nonNull(onboardingWorkerDetailsVO.getAssignmentVO().getContractSourceId())) {
+                    LOGGER.info("Before ContractRepo Save");
+                    ContractMasterEntity contractMasterEntity = contractMasterRepository.getContractByContractNumberContractSource(onboardingWorkerDetailsVO.getAssignmentVO().getContractNumber().toUpperCase(), onboardingWorkerDetailsVO.getAssignmentVO().getContractSourceId());
+                    ContractKey contractKey = new ContractKey();
+                    contractKey.setContractNumber(onboardingWorkerDetailsVO.getAssignmentVO().getContractNumber().toUpperCase());
+                    contractKey.setContractSourceId(onboardingWorkerDetailsVO.getAssignmentVO().getContractSourceId());
+                    contractMasterEntity.setId(contractKey);
+                    contractMasterEntity.setEndDate(CwocUtility.getSQLDate(onboardingWorkerDetailsVO.getContractMasterVO().getEndDate()));
+                    contractMasterEntity.setUpdatedBy(userSID);
+                    contractMasterEntity.setUpdatedOn(new Date());
+                    contractMasterRepository.save(contractMasterEntity);
+                }
+            }
+
+            LOGGER.info("Before ReadyToWorkMapper");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getReadyToWorkVO())) {
+                onboardingWorkerDetailsVO.getReadyToWorkVO().setAssignmentId(assignmentEntity.getId());
+                ReadyToWorkMapper readyToWorkMapper = new ReadyToWorkMapper();
+                autowireCapableBeanFactory.autowireBean(readyToWorkMapper);
+                ReadyToWorkEntity readyToWorkEntity = readyToWorkMapper.map(onboardingWorkerDetailsVO.getReadyToWorkVO());
+                assignmentEntity.setReadyToWorkEntity(readyToWorkEntity);
+            }
+            LOGGER.info("Before InternshipEntityMapper");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getInternshipVO())) {
+                onboardingWorkerDetailsVO.getInternshipVO().setAssignmentId(assignmentEntity.getId());
+                AssignmentInternshipEntity internshipEntity = new InternshipEntityMapper().map(onboardingWorkerDetailsVO.getInternshipVO());
+                assignmentEntity.setAssignmentInternshipEntity(internshipEntity);
+            }
+            LOGGER.info("Before AssignmentPreScreeningMapper");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getPreScreeningVO())) {
+                onboardingWorkerDetailsVO.getPreScreeningVO().setAssignmentId(assignmentEntity.getId());
+
+                AssignmentPreScreeningEntity preScreeningEntity = new AssignmentPreScreeningMapper().map(onboardingWorkerDetailsVO.getPreScreeningVO());
+                assignmentEntity.setAssignmentPreScreeningEntity(preScreeningEntity);
+            }
+            LOGGER.info("Before AssignmentBlockMapper");
+            if (Objects.nonNull(onboardingWorkerDetailsVO.getAssignmentBlockVO()) && !onboardingWorkerDetailsVO.getAssignmentBlockVO().isEmpty()) {
+                List<AssignmentBlockEntity> blockEntities = new ArrayList<>();
+                onboardingWorkerDetailsVO.getAssignmentBlockVO().forEach(b -> {
+                    if (Objects.nonNull(b) && StringUtils.isNotEmpty(b.getAssignmentId())) {
+                        oldAssignmentEntity.getAssignmentBlockEntities().stream().filter(c->c.getRtwBlockId().equals(b.getRtwBlockId())).forEach(c-> {
+                            if(!b.getStatus().equalsIgnoreCase(c.getStatus())) {
+                                AssignmentBlockEntity blockEntity = new AssignmentBlockMapper().map(b);
+                                blockEntities.add(blockEntity);
+                            }
+
+                        });
+
+                    }
+                });
+                assignmentEntity.setAssignmentBlockEntities(blockEntities);
+            }
+            LOGGER.info("Before AssignmentCommunicationEntity save");
+            if (onboardingWorkerDetailsVO.getAssignmentVO() != null && Objects.nonNull(onboardingWorkerDetailsVO.getAssignmentVO().getComments())) {
+                AssignmentCommunicationEntity assignmentCommunicationEntity = new AssignmentCommunicationEntity();
+                assignmentCommunicationEntity.setCreatedBy(userSID);
+                assignmentCommunicationEntity.setCreatedOn(new Timestamp(System.currentTimeMillis()));
+                assignmentCommunicationEntity.setComments(onboardingWorkerDetailsVO.getAssignmentVO().getComments());
+                assignmentCommunicationEntity.setId(onboardingWorkerDetailsVO.getAssignmentVO().getId());
+                assignmentCommunicationEntity.setActive(true);
+                assignmentCommunicationEntity = communicationRepository.save(assignmentCommunicationEntity);
+            }
+            LOGGER.info("Before auditWorkerLog");
+            auditWorkerLog(workerEntity, tempWorkerEntity, assignmentEntity);
+
+            LOGGER.info("Before workersRepository save");
+            if (!onboardingWorkerDetailsVO.getIsTempWorker()) {
+
+                workersRepository.save(workerEntity);
+            } else {
+                tempWorkerRepository.save(tempWorkerEntity);
+            }
+            LOGGER.info("UpdateRejectionDate");
+            if (assignmentEntity.getDispositionCodeId() == Dispositioncode.REJECTED.getValue()) {
+                if (assignmentEntity.getRejectionDate() == null) {
+                    assignmentEntity.setRejectionDate(new Date(System.currentTimeMillis()));
+                }
+
+                if (onboardingWorkerDetailsVO.getIsTempWorker()) {
+                    tempWorkerService.copyToWorker(assignmentEntity.getCandidateId());
+                }
+            }
+            //Terminating a worker in temp.
+            if((assignmentEntity.getDispositionCodeId() == Dispositioncode.CLOSED.getValue() || assignmentEntity.getDispositionCodeId() == Dispositioncode.TERMINATED.getValue() ) && onboardingWorkerDetailsVO.getIsTempWorker()  )
+            {
+                tempWorkerService.copyToWorker(assignmentEntity.getCandidateId());
+            }
+
+            LOGGER.info("Before assignmentRepository save");
+            assignmentRepository.save(assignmentEntity);
+
+            return onboardingWorkerDetailsVO;
+        } catch (Exception ex) {
+            LOGGER.error("Error while saving worker: " + ex);
+            throw ex;
+        }
+    }
+
+    //for audit
+    public void auditWorkerLog(WorkerEntity workerEntity, TempWorkerEntity tempWorkerEntity, AssignmentEntity assignmentEntity) {
+        LOGGER.info("Begin of auditWorkerLog method");
+        List<AuditInfo> updatedFields = new ArrayList<>();
+        Long candidateId = 0L;
+        String sid = "";
+        try {
+            if (Objects.nonNull(workerEntity)) {
+                LOGGER.info("Inside worker audit");
+                candidateId = workerEntity.getId();
+                sid = workerEntity.getSid();
+                WorkerEntity workerEntityOld = workersRepository.getWorkerByById(workerEntity.getId());
+                workerEntityOld.setAssignmentEntities(null);
+                List<AuditInfo> notEquals = auditUtilService.compareGetters(workerEntityOld, workerEntity, new ArrayList<String>());
+                if (Objects.nonNull(notEquals)) {
+                    updatedFields.addAll(notEquals);
+                }
+                List<String> ignoreFields = new ArrayList<>();
+                if (assignmentEntity.getDispositionCodeId() != Dispositioncode.TERMINATED.getValue()) {
+                    ignoreFields.add("terminationDate");
+                }
+                //terminationDate
+                List<AuditInfo> workerTenureAuditFields = auditUtilService.compareGetters(workerEntityOld.getWorkerTenureEntity(), workerEntity.getWorkerTenureEntity(), ignoreFields);
+                if (Objects.nonNull(workerTenureAuditFields)) {
+                    updatedFields.addAll(workerTenureAuditFields);
+                }
+            }
+            if (Objects.nonNull(tempWorkerEntity)) {
+                LOGGER.info("Inside temp worker audit");
+                candidateId = tempWorkerEntity.getId();
+                sid = tempWorkerEntity.getSid();
+                TempWorkerEntity tempWorkerEntityOld = tempWorkerRepository.getWorkerById(tempWorkerEntity.getId());
+                List<AuditInfo> tempWorkerNotEquals = auditUtilService.compareGetters(tempWorkerEntityOld, tempWorkerEntity, new ArrayList<String>());
+                if (Objects.nonNull(tempWorkerNotEquals)) {
+                    updatedFields.addAll(tempWorkerNotEquals);
+                }
+            }
+
+            AssignmentEntity assignmentEntity1Old = assignmentRepository.findById(assignmentEntity.getId()).get();
+            List<String> ignoreFields = new ArrayList<>();
+            ignoreFields.add("submittedDate");
+            ignoreFields.add("firstTouchTime");
+            LOGGER.info("Getting assignment audit");
+            List<AuditInfo> assignmentnotEquals = auditUtilService.compareGetters(assignmentEntity1Old, assignmentEntity, ignoreFields);
+            if (Objects.nonNull(assignmentnotEquals)) {
+                updatedFields.addAll(assignmentnotEquals);
+            }
+            LOGGER.info("Getting VMO audit");
+            List<AuditInfo> vmoAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getVmoManagedEntity(), assignmentEntity.getVmoManagedEntity(), new ArrayList<>());
+            if (Objects.nonNull(vmoAuditFields)) {
+                updatedFields.addAll(vmoAuditFields);
+            }
+            LOGGER.info("Getting assignment audit");
+            if (assignmentEntity1Old.getReadyToWorkEntity() != null &&
+                    !StringUtils.isEmpty(assignmentEntity1Old.getReadyToWorkEntity().getIsRTWSent())) {
+                if (assignmentEntity1Old.getReadyToWorkEntity().getIsRTWSent() != null) {
+                    String rtwSentTrimmed =
+                            assignmentEntity1Old.getReadyToWorkEntity().getIsRTWSent().trim();
+                    ReadyToWorkEntity readyToWorkEntity = assignmentEntity1Old.getReadyToWorkEntity();
+                    readyToWorkEntity.setIsRTWSent(rtwSentTrimmed);
+                    LOGGER.info("After trimming");
+                }
+            }
+            LOGGER.info("Line #227");
+            if (Objects.nonNull(tempWorkerEntity)) {
+                ReadyToWorkEntity readyToWorkEntity = assignmentEntity.getReadyToWorkEntity();
+                readyToWorkEntity.setIsRTWSent(null);
+            }
+            LOGGER.info("Before readyToWorkEntity audit");
+            if (assignmentEntity1Old.getReadyToWorkEntity() != null && assignmentEntity.getReadyToWorkEntity() != null) {
+                String oldIsRTWSent = assignmentEntity1Old.getReadyToWorkEntity().getIsRTWSent();
+                String newIsRTWSent = assignmentEntity.getReadyToWorkEntity().getIsRTWSent();
+                if (Strings.isNullOrEmpty(oldIsRTWSent) && Strings.isNullOrEmpty(newIsRTWSent)) {
+                    assignmentEntity1Old.getReadyToWorkEntity().setIsRTWSent(null);
+                    assignmentEntity.getReadyToWorkEntity().setIsRTWSent(null);
+                }
+            }
+            List<AuditInfo> readyToWorkAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getReadyToWorkEntity(), assignmentEntity.getReadyToWorkEntity(), new ArrayList<>());
+            if (Objects.nonNull(readyToWorkAuditFields)) {
+                updatedFields.addAll(readyToWorkAuditFields);
+            }
+            LOGGER.info("Before getAssignmentInternshipEntity audit");
+            List<AuditInfo> internshipAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getAssignmentInternshipEntity(), assignmentEntity.getAssignmentInternshipEntity(), new ArrayList<>());
+            if (Objects.nonNull(internshipAuditFields)) {
+                updatedFields.addAll(internshipAuditFields);
+            }
+            LOGGER.info("Before getAssignmentInternshipEntity1 audit");
+            if (assignmentEntity1Old.getAssignmentInternshipEntity() != null) {
+                List<AuditInfo> internshipAuditField = new ArrayList<>();
+                if (Objects.nonNull(assignmentEntity.getAssignmentInternshipEntity().getEmergingTalentProgram())) {
+                    if (!(assignmentEntity.getAssignmentInternshipEntity().getEmergingTalentProgram().equals(assignmentEntity1Old.getAssignmentInternshipEntity().getEmergingTalentProgram()))) {
+                        internshipAuditField.add(new AuditInfo("emergingTalentProgram", assignmentEntity.getAssignmentInternshipEntity().getEmergingTalentProgram(),
+                                assignmentEntity1Old.getAssignmentInternshipEntity().getEmergingTalentProgram(), "Emerging Talent Program Name"));
+                        updatedFields.addAll(internshipAuditField);
+                    }
+                }
+            }
+            LOGGER.info("Before getAssignmentRelativeEntity audit");
+            List<AuditInfo> relativeAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getAssignmentRelativeEntity(), assignmentEntity.getAssignmentRelativeEntity(), new ArrayList<>());
+            if (Objects.nonNull(relativeAuditFields)) {
+                updatedFields.addAll(relativeAuditFields);
+            }
+            LOGGER.info("Before getAssignmentPreScreeningEntity audit");
+            List<AuditInfo> preScreeningAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getAssignmentPreScreeningEntity(), assignmentEntity.getAssignmentPreScreeningEntity(), new ArrayList<>());
+            if (Objects.nonNull(preScreeningAuditFields)) {
+                updatedFields.addAll(preScreeningAuditFields);
+            }
+            LOGGER.info("Before getAssignmentReferralEntity audit");
+            List<AuditInfo> referralAuditFields = auditUtilService.compareGetters(assignmentEntity1Old.getAssignmentReferralEntity(), assignmentEntity.getAssignmentReferralEntity(), new ArrayList<>());
+            if (Objects.nonNull(referralAuditFields)) {
+                updatedFields.addAll(referralAuditFields);
+            }
+            LOGGER.info("Before getAssignmentBlockEntities audit");
+            if (assignmentEntity.getAssignmentBlockEntities() != null && assignmentEntity.getAssignmentBlockEntities().size() > 0) {
+                int index = 0;
+                List<RtwBlocksEntity> rtwBlocksEntities = rtwBlocksRepository.findAll().stream().collect(Collectors.toList());
+                List<String> ignoreFields1 = new ArrayList<>();
+                ignoreFields.add("active");
+                for (AssignmentBlockEntity blockEntity : assignmentEntity.getAssignmentBlockEntities()) {
+                    String blockName = rtwBlocksEntities.stream().filter(c -> c.getId().equals(blockEntity.getRtwBlockId())).findFirst().orElse(null).getBlockName();
+                    List<AuditInfo> blockFields = auditUtilService.compareGetters(assignmentEntity1Old.getAssignmentBlockEntities().get(index), blockEntity, ignoreFields1);
+                    if (blockFields != null && blockFields.size() > 0) {
+                        blockFields.forEach(c -> {
+                            if (c.getFieldName().toUpperCase(Locale.ROOT).equals("RTWBLOCKID")) {
+                                c.setNewValue(blockName);
+                                c.setDisplayColumnName("RTW Block");
+                            } else if (c.getFieldName().toUpperCase(Locale.ROOT).equals("STATUS")) {
+                                c.setDisplayColumnName(blockName + " Status");
+                            } else if (c.getFieldName().toUpperCase(Locale.ROOT).equals("STATUSDATE")) {
+                                c.setDisplayColumnName(blockName + " Status Date");
+                            }
+                        });
+                        updatedFields.addAll(blockFields);
+                    }
+                    index++;
+                }
+            }
+
+            LOGGER.info("Before audit Save");
+            String userSID = request.getHeader("userSID");
+            workerAuditService.saveAudit(candidateId, sid, assignmentEntity.getId(), userSID, updatedFields);
+            LOGGER.info("Before updateWorkerVersion Save");
+            // workerVersionService.updateWorkerVersion(candidateId, userSID);
+        } catch (Exception e) {
+            LOGGER.error("Error in Audit log: " + e.getMessage());
+        }
+    }
+
+    public Integer assignToMe(String assignmentId) {
+        String userSID = request.getHeader("userSID");
+        Date currentDate = new Date();
+        java.sql.Date sqlDate = new java.sql.Date(currentDate.getTime());
+        Integer result = assignmentRepository.setIdManagerSidAndDispositionCode(userSID, assignmentId.trim(), sqlDate);
+        return result;
+    }
+
+    public Integer reactivateDispositionCode(String assignmentID) {
+        Date currentDate = new Date();
+        java.sql.Date sqlDate = new java.sql.Date(currentDate.getTime());
+        //java.sql.Timestamp sqlDate = new java.sql.Timestamp(new Dat(convertedDate).getTime());
+        ViewComboPairVO dispositionCode = dispositionCodeService.getDispositionByCode("SID Created");
+        int result = assignmentRepository.setDispositionCode(dispositionCode.getId(), sqlDate, assignmentID);
+        return result;
+    }
+
+    public Integer updateDispositionCode(String assignmentID, Integer dispositionCode) {
+        int result = assignmentRepository.updateDispositionCodeById(assignmentID, dispositionCode);
+        return result;
+    }
+
+    public Integer changeToObsolete(ObsoleteWorkerVO obsoleteWorkerVO) {
+        String userSID = request.getHeader("userSID");
+        int result = 0;
+        user = new LoggedInUserVO();
+        user.setSID(userSID);
+        WorkerEntity workerEntity = null;
+        AssignmentEntity assignmentEntity = assignmentRepository.getByAssignmentId(obsoleteWorkerVO.getAssignmentId());
+        if (Objects.nonNull(assignmentEntity)) {
+
+            workerEntity = workersRepository.getWorkerByById(assignmentEntity.getCandidateId());
+        }
+        List<WorkerEntity> workerEntities = workersRepository.getMultipleWorkerBySid(obsoleteWorkerVO.getSid());
+        if (Objects.nonNull(workerEntities) && workerEntities.size() > 0) {
+            for (WorkerEntity worker : workerEntities) {
+                List<AssignmentEntity> assignment = assignmentRepository.getByCandidateId(worker.getId());
+                if (Objects.nonNull(assignment)) {
+                    for (AssignmentEntity assignmentEntityMultiple : assignment) {
+                        result = updateDispositionCode(assignmentEntityMultiple.getId(), Dispositioncode.OBSOLETE.getValue());
+                        worker.setObsoleteComments(obsoleteWorkerVO.getObsoleteComments());
+                        worker.setObsoleteSid(obsoleteWorkerVO.getSurvivingSid());
+                        worker.setObsolete("1");
+                        workersRepository.save(worker);
+                        try {
+                            List<AuditInfo> auditInfos = new ArrayList<>();
+                            auditInfos.add(new AuditInfo("dispositionCodeId", Dispositioncode.OBSOLETE.getValue().toString(), assignmentEntityMultiple.getDispositionCodeId().toString(), "Disposition Code"));
+                            workerAuditService.saveAudit(worker.getId(), worker.getSid(), assignmentEntityMultiple.getId(), userSID, auditInfos);
+
+                        } catch (Exception e) {
+                            LOGGER.error("=======================Error in  saving audit Info for ObsoleteSid================= " + e.getMessage());
+                        }
+
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public String generateNationalIDSSn(String assignmentId) {
+        AssignmentEntity assignmentEntity = assignmentRepository.getByAssignmentId(assignmentId);
+        String nationalID = null;
+        String SSN=null;
+        Boolean isNationalIdOrSsnPresent=true;
+        if (Objects.nonNull(assignmentEntity)) {
+            WorkerEntity workerEntity = workersRepository.getWorkerByById(assignmentEntity.getCandidateId());
+            TempWorkerEntity tempWorkerEntity = tempWorkerRepository.getWorkerById(assignmentEntity.getCandidateId());
+            List<String> workerList = workerService.getWorkerNationalIds();
+            
+            while(isNationalIdOrSsnPresent){
+                nationalID = CwocUtility.generateRandomNumber();
+                 SSN = nationalID;
+                if (!workerList.contains(nationalID)) {
+                    isNationalIdOrSsnPresent=false;
+                }
+            }
+            if (!isNationalIdOrSsnPresent) {
+                tempWorkerEntity.setNationalId(nationalID);
+                tempWorkerEntity.setSsn(SSN);
+                tempWorkerRepository.save(tempWorkerEntity);
+            }
+        }
+        return nationalID;
+    }
+}
