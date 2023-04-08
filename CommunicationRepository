@@ -1,0 +1,28 @@
+package com.jpmc.cwoc.repository.cwoc.communication;
+
+import com.jpmc.cwoc.cwoc.communication.CommunicationVO;
+import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentCommunicationEntity;
+import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentEntity;
+
+import java.io.ByteArrayInputStream;
+import java.sql.Blob;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+@Repository
+@Transactional
+public interface CommunicationRepository extends JpaRepository<AssignmentCommunicationEntity, Integer> {
+
+    @Query(value = "update ASSIGNMENTCOMMUNICATION set ACTIVE='0' WHERE COMMUNICATIONID= :communicationId", nativeQuery = true)
+    int deleteWhenInactive(@Param("communicationId") int communicationId);
+
+
+    @Query(value = "select COMMUNICATIONFILE from ASSIGNMENTCOMMUNICATION where COMMUNICATIONID= :communicationId", nativeQuery = true)
+    byte[]getAttachment(@Param("communicationId") int communicationId);
+
+   @Query(value="select EMAILLOGID from ASSIGNMENTCOMMUNICATION where COMMUNICATIONID= :communicationId",nativeQuery = true)
+   Integer findEmailId(@Param("communicationId") int communicationId);
+}
