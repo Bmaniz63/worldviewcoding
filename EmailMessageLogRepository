@@ -1,0 +1,14 @@
+package com.jpmc.cwoc.repository.common.email;
+
+import com.jpmc.cwoc.entities.common.email.EmailMessageLogEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface EmailMessageLogRepository  extends JpaRepository<EmailMessageLogEntity, Long> {
+
+    @Query(value = "select EmailBody from EmailMessageLog where EmailmsgId= :emailLogId", nativeQuery = true)
+    byte[]getAttachment(@Param("emailLogId") int emailLogId);
+}
