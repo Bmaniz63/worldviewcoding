@@ -1,0 +1,33 @@
+package com.jpmc.cwoc.repository.cwoc.worker;
+
+import com.jpmc.cwoc.entities.cwoc.worker.TempWorkerEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import javax.transaction.Transactional;
+import java.util.List;
+
+@Repository
+@Transactional
+public interface TempWorkerRepository extends JpaRepository<TempWorkerEntity, Long> {
+
+    TempWorkerEntity findBySid(String sid);
+
+    @Query(value = "SELECT * from WORKER_TEMP  where sid= :sid", nativeQuery = true)
+    TempWorkerEntity getWorkerBySid(@Param("sid") String sid);
+
+    TempWorkerEntity findTempWorkerEntityById(long id);
+
+    TempWorkerEntity findTempWorkerEntityBySid(String sid);
+
+    void deleteTempWorkerEntityById(long id);
+
+    @Query(value = "SELECT * from WORKER_TEMP w where  w.candidateId= :id", nativeQuery = true)
+    TempWorkerEntity getWorkerById(Long  id);
+
+    @Query(value = "SELECT * from WORKER_TEMP w  where( w.nationalId =:nationalId OR w.ssn =:ssn)", nativeQuery = true)
+    List<TempWorkerEntity> isNationalIdOrSSn(@Param("nationalId") String nationalId, @Param("ssn") String ssn);
+}
