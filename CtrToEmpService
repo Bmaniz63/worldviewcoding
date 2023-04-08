@@ -1,0 +1,102 @@
+package com.jpmc.cwoc.ctrToEmp;
+
+import com.jpmc.cwoc.common.CtrToEmpVO;
+import com.jpmc.cwoc.common.audit.WorkerAuditService;
+import com.jpmc.cwoc.cwoc.worker.TempWorkerService;
+import com.jpmc.cwoc.cwoc.worker.WorkerService;
+import com.jpmc.cwoc.dao.cwoc.ctrToEmp.CtrToEmpDao;
+import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
+import com.jpmc.cwoc.enums.Dispositioncode;
+import com.jpmc.cwoc.repository.cwoc.assignment.AssignmentRepository;
+import com.jpmc.cwoc.repository.cwoc.worker.WorkersRepository;
+import com.jpmc.cwoc.utils.AuditInfo;
+import org.apache.commons.lang3.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+@Service
+public class CtrToEmpService {
+
+    @Autowired
+    CtrToEmpDao ctrToEmpDao;
+    @Autowired
+    WorkerAuditService workerAuditService;
+    @Autowired
+    TempWorkerService tempWorkerService;
+    @Autowired
+    WorkersRepository workersRepository;
+
+    @Autowired
+    AssignmentRepository assignmentRepository;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CtrToEmpService.class);
+    public void processCtrToEmpWorkers()
+    {
+        List<CtrToEmpVO> ctrToEmpVOS;
+
+        try {
+            ctrToEmpVOS = ctrToEmpDao.getCtrToDaoList(false);
+
+
+            for (CtrToEmpVO ctrToEmpVO : ctrToEmpVOS) {
+                terminateWorker(ctrToEmpVO.getAssignmentId(), ctrToEmpVO.getSid(), false);
+            }
+            ctrToEmpVOS = ctrToEmpDao.getCtrToDaoList(true);
+            for (CtrToEmpVO ctrToEmpVO : ctrToEmpVOS) {
+                terminateWorker(ctrToEmpVO.getAssignmentId(), ctrToEmpVO.getSid(), true);
+            }
+            return;
+        }
+        catch (Exception ex)
+        {
+            LOGGER.error("An error occurred while executing  processCtrToEmpWorkers request {} " + ex.getMessage());
+            throw ex;
+        }
+
+    }
+
+    @Transactional
+    public void terminateWorker(String assignmentid,String sid,boolean isTempWorker)
+    {
+        try {
+            AssignmentEntity assignmentEntity = assignmentRepository.getByAssignmentId(assignmentid);
+            List<AuditInfo> updatedFields = new ArrayList<>();
+
+            AuditInfo updatedFieldsVO = new AuditInfo("dispositioncodeid", "8", assignmentEntity.getDispositionCodeId().toString(), "Disposition Code");
+            updatedFields.add(updatedFieldsVO);
+            assignmentEntity.setDispositionCodeId(Dispositioncode.CLOSED.getValue());
+            assignmentRepository.save(assignmentEntity);
+            updatedFieldsVO = new AuditInfo("Neimstatus", "T", "A", "SID Status");
+
+            updatedFields.add(updatedFieldsVO);
+            workerAuditService.saveAudit(assignmentEntity.getCandidateId(), sid, assignmentEntity.getId(), "CtrToEmp", updatedFields);
+            if (isTempWorker) {
+                long tempworkerId = assignmentEntity.getCandidateId();
+
+                WorkerEntity workerEntity = workersRepository.getWorkerBySid(sid);
+                if (Objects.nonNull(workerEntity)) {
+                    tempWorkerService.copyTempWorker(tempworkerId, workerEntity.getId());
+                } else {
+                    tempWorkerService.copyToWorker(tempworkerId);
+                }
+
+
+            }
+
+            return;
+        }
+        catch (Exception ex)
+        {
+            LOGGER.error("An error occurred while executing  terminateWorker request {assignmentId "+assignmentid+",sid "+sid+",isTempWorker"+ isTempWorker +"} " + ex.getMessage());
+        }
+    }
+
+
+}
