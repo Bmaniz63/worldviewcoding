@@ -1,0 +1,106 @@
+package com.jpmc.cwoc.cwoc.worker;
+
+import com.jpmc.cwoc.entities.cwoc.worker.TempWorkerEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
+import com.jpmc.cwoc.mappers.TempWorkerMapper;
+import com.jpmc.cwoc.mappers.WorkerMapper;
+import com.jpmc.cwoc.repository.cwoc.worker.TempWorkerRepository;
+import com.jpmc.cwoc.repository.cwoc.worker.WorkersRepository;
+import com.jpmc.cwoc.repository.cwoc.assignment.AssignmentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.util.List;
+
+@Service
+public class TempWorkerService {
+
+    @Autowired
+    private WorkersRepository workersRepository;
+
+    @Autowired
+    private AssignmentRepository assignmentRepository;
+
+    @Autowired
+    private TempWorkerRepository tempWorkerRepository;
+
+    @Transactional
+    public void copyToWorker(long candidateId, String sid, String assignmentId) {
+        TempWorkerEntity tempWorkerEntity = tempWorkerRepository.findTempWorkerEntityById(candidateId);
+
+        WorkerEntity workerEntity = new TempWorkerMapper().map(tempWorkerEntity);
+        workerEntity.setSid(sid);
+        workerEntity.setReentryEligible(1);
+        workersRepository.save(workerEntity);
+
+        //Change disposition code in assignment to SID Created
+        //SIDACTIVATEDTIME  need to set current time
+       // Integer result = onboardingOperationService.reactivateDispositionCode(assignmentId);
+
+        //Delete tempworker data based candidateid
+        tempWorkerRepository.deleteTempWorkerEntityById(candidateId);
+    }
+
+    @Transactional
+    public void copyToWorker(long candidateId) {
+
+        TempWorkerEntity tempWorkerEntity = tempWorkerRepository.findTempWorkerEntityById(candidateId);
+        WorkerEntity workerEntity = new TempWorkerMapper().map(tempWorkerEntity);
+        workersRepository.save(workerEntity);
+        tempWorkerRepository.deleteTempWorkerEntityById(candidateId);
+    }
+
+   /* public WorkerEntity copyTempWorker(Long candidateId) {
+
+        TempWorkerEntity tempWorkerEntity = tempWorkerRepository.findTempWorkerEntityById(candidateId);
+        WorkerEntity workerEntity1 = new TempWorkerMapper().map(tempWorkerEntity);
+        return workersRepository.save(workerEntity1);
+    }*/
+   @Transactional
+    public WorkerEntity copyTempWorker(Long candidateId, Long originalId) {
+        TempWorkerEntity tempWorkerEntity = tempWorkerRepository.findTempWorkerEntityById(candidateId);
+        WorkerEntity workerEntity1 = new TempWorkerMapper().map(tempWorkerEntity);
+        workerEntity1.setId(originalId);
+        tempWorkerRepository.deleteTempWorkerEntityById(candidateId);
+        return workersRepository.save(workerEntity1);
+    }
+    @Transactional
+    public WorkerEntity copyTempWorker(TempWorkerEntity tempWorkerEntity, Long originalId) {
+        WorkerEntity workerEntity1 = new TempWorkerMapper().map(tempWorkerEntity);
+        workerEntity1.setId(originalId);
+        tempWorkerRepository.deleteTempWorkerEntityById(tempWorkerEntity.getId());
+        return workersRepository.save(workerEntity1);
+    }
+
+    public WorkerVO getTempWorkerById(Long id) {
+        return (new WorkerMapper().map(tempWorkerRepository.getWorkerById(id)));
+    }
+    public TempWorkerEntity getTempWorkerEntityById(Long id) {
+        return tempWorkerRepository.getWorkerById(id);
+    }
+    public TempWorkerEntity getTempWorkerBySid(String sid) {
+
+
+        return tempWorkerRepository.getWorkerBySid(sid);
+    }
+
+    public  boolean isSecandaryAssignment( String sid)
+    {
+        TempWorkerEntity tempWorkerEntity= getTempWorkerBySid(sid);
+
+        if (tempWorkerEntity!=null )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public void saveTempWorker(WorkerVO workerVO) {
+        TempWorkerEntity workerEntity = new WorkerMapper().mapTemp(workerVO);
+        tempWorkerRepository.save(workerEntity);
+    }
+}
