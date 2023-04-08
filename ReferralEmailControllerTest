@@ -1,0 +1,62 @@
+package com.jpmc.cwoc.controllers.referral;
+
+import com.jpmc.cwoc.apiCallClasses.GeneralResponceVO;
+import com.jpmc.cwoc.cwoc.referral.ReferralEmailNotificationService;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+
+public class ReferralEmailControllerTest {
+
+    @InjectMocks
+    private ReferralEmailController referralEmailController;
+
+    @Mock
+    private ReferralEmailNotificationService referralService;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void sendReferralEmailNotifications_ShouldReturnSuccessResponse() throws Exception {
+        // Mock the generateReferralEmailNotfication method of the referralService
+        doNothing().when(referralService).generateReferralEmailNotfication(7);
+        doNothing().when(referralService).generateReferralEmailNotfication(15);
+        doNothing().when(referralService).generateReferralEmailNotfication(21);
+
+        // Call the sendReferralEmailNotifications method of the referralEmailController
+        ResponseEntity<GeneralResponceVO> responseEntity = referralEmailController.sendReferralEmailNotifications();
+
+        // Verify that the generateReferralEmailNotfication method of the referralService was called three times
+        verify(referralService, times(3)).generateReferralEmailNotfication(anyInt());
+
+        // Assert that the response status code is HttpStatus.OK and the message is "Success"
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals("Success", responseEntity.getBody().getMessage());
+    }
+
+    @Test
+    public void sendReferralEmailNotifications_ShouldReturnErrorResponse() throws Exception {
+        // Mock the generateReferralEmailNotfication method of the referralService to throw an exception
+        doThrow(new Exception("Error")).when(referralService).generateReferralEmailNotfication(anyInt());
+
+        // Call the sendReferralEmailNotifications method of the referralEmailController
+        ResponseEntity<GeneralResponceVO> responseEntity = referralEmailController.sendReferralEmailNotifications();
+
+        // Verify that the generateReferralEmailNotfication method of the referralService was called three times
+        verify(referralService, times(3)).generateReferralEmailNotfication(anyInt());
+
+        // Assert that the response status code is HttpStatus.BAD_REQUEST and the message is "Error"
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals("Error", responseEntity.getBody().getMessage());
+    }
+}
