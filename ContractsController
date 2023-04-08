@@ -1,0 +1,90 @@
+package com.jpmc.cwoc.controllers.cwoc.referenceData;
+
+import com.jpmc.cwoc.common.JobCodeVO;
+import com.jpmc.cwoc.cwoc.contract.ContractMasterVO;
+import com.jpmc.cwoc.cwoc.master.ContractService;
+import com.jpmc.cwoc.cwoc.master.JobCodeService;
+import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import com.jpmc.cwoc.neim.WorkerExcelExportService;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+
+@RestController
+@RequestMapping("/referenceData/contracts")
+@CrossOrigin
+
+public class ContractsController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ContractsController.class);
+    @Autowired
+    private ContractService contractService;
+    @Autowired
+    private WorkerExcelExportService workerExcelExportService;
+
+    @ApiOperation(value = "Get Contracts List")
+    @GetMapping(value = "/getContractsList", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public List<ContractMasterVO> getContractList() {
+
+        try {
+            return contractService.getContractList();
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getContractsList  request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "save contract ")
+    @PostMapping(value = "/saveContract")
+    public boolean saveContract(@RequestBody ContractMasterVO contractMasterVO) {
+        try {
+            return contractService.saveContract(contractMasterVO);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  saveContract request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+
+    }
+
+    @ApiOperation(value = "Export contracts to excel ")
+    @GetMapping(value = "/exportContracts")
+    public InputStreamResource exportContracts(HttpServletResponse response) throws IOException {
+        response.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+        response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        ByteArrayInputStream byteArrayInputStream = workerExcelExportService.exportContracts();
+
+        return new InputStreamResource(byteArrayInputStream);
+    }
+
+    @ApiOperation(value = "getContract ")
+    @GetMapping(value = "/getContract", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ContractMasterVO getContract(String contractNumber) {
+        try {
+            return contractService.getContract(contractNumber);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  getContract request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "getContractByContractNumber ")
+    @GetMapping(value = "/getContractByContractNumber", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ContractMasterVO getContractByContractNumber(String contractNumber) {
+        try {
+            return contractService.getContractByContractNumber(contractNumber);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  getContractByContractNumber request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+
+    }
+}
