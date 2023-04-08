@@ -1,0 +1,32 @@
+package com.jpmc.cwoc.controllers.cwoc.reports;
+
+import com.jpmc.cwoc.common.audit.WorkerAuditService;
+import com.jpmc.cwoc.cwoc.recentlyActivatedSids.RecentlyActivatedSidsRequestVO;
+import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
+@RestController
+@RequestMapping("/cwoc/reports")
+@CrossOrigin
+public class IdvaultUpdateErrorReportController {
+    @Autowired
+    private WorkerAuditService workerAuditService;
+
+
+    @ApiOperation(value = "Export reactivatedSids to excel ")
+    @PostMapping(value = "/idvaultUpdateErrorReport")
+    public InputStreamResource idvaultUpdateErrorReport(@RequestBody RecentlyActivatedSidsRequestVO reactivatedSIDVO, HttpServletResponse response ) throws IOException {
+        response.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+        response.setHeader("Content-Type", "application/vnd.Staropenxmlformats-officedocument.spreadsheetml.sheet");
+
+        ByteArrayInputStream byteArrayInputStream = workerAuditService.getIdvaultAuditErrorReport(reactivatedSIDVO.getStartDate(),reactivatedSIDVO.getEndDate());
+
+        return new InputStreamResource(byteArrayInputStream);
+    }
+}
