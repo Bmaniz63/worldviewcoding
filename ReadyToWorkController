@@ -1,0 +1,59 @@
+package com.jpmc.cwoc.controllers.cwoc.readyToWork;
+
+import com.jpmc.cwoc.cwoc.readyToWork.*;
+import com.jpmc.cwoc.exception.CwocInvalidRequestException;
+import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import com.jpmc.cwoc.neim.WorkerExcelExportService;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+
+@RestController
+@RequestMapping("/cwoc/readyToWork")
+@CrossOrigin
+public class ReadyToWorkController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadyToWorkController.class);
+
+    @Autowired
+    ReadyToWorkService readyToWorkService;
+
+    @ApiOperation(value = "Generate Ready to work Email")
+    @PostMapping("/genereateReadyToWorkEmail")
+    public ResponseEntity< List<RtwResponce>> genereateReadyToWorkEmail(@RequestBody List<RtwSendRequestVO> rtwSendRequestVOS) {
+        try {
+
+            if (rtwSendRequestVOS!=null || rtwSendRequestVOS.size()>0) {
+
+                return new ResponseEntity<>(readyToWorkService.sentReadyToWork(rtwSendRequestVOS) , HttpStatus.OK);
+            } else {
+                throw new CwocInvalidRequestException("Input List is null or Empty");
+            }
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing saveWorker request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("There was an issue with sending the Ready to Work email(s)");
+        }
+    }
+
+    @GetMapping("/getReadyToWorkWorkers")
+    public ResponseEntity< List<RtwWorkers>>getWorkers() {
+        try {
+            return new ResponseEntity<>(readyToWorkService.getWorkers() , HttpStatus.OK);
+        }
+        catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getWorkers request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("There was an issue while retrieving the workers");
+        }
+    }
+}
