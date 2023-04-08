@@ -1,0 +1,32 @@
+package com.jpmc.cwoc.repository.cwoc.worker;
+
+import com.jpmc.cwoc.entities.cwoc.worker.TempWorkerEntity;
+import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import javax.transaction.Transactional;
+import java.util.List;
+
+
+@Repository
+@Transactional
+public interface WorkersRepository extends JpaRepository<WorkerEntity, Long> {
+
+    WorkerEntity findBySid(String sid);
+
+    @Query(value = "SELECT * from Worker w  where upper(w.sid)= :sid", nativeQuery = true)
+    WorkerEntity getWorkerBySid(@Param("sid") String sid);
+
+    @Query(value = "SELECT * from Worker w where  w.candidateId= :id", nativeQuery = true)
+    WorkerEntity getWorkerByById( Long  id);
+
+    @Query(value = "SELECT * from Worker w  where w.sid= :sid", nativeQuery = true)
+    List<WorkerEntity> getMultipleWorkerBySid(@Param("sid") String sid);
+    @Query(value = "SELECT * from WORKER w  where( w.nationalId =:nationalId OR w.ssn =:ssn)", nativeQuery = true)
+    List<WorkerEntity> isNationalIdOrSSn(@Param("nationalId") String nationalId, @Param("ssn") String ssn);
+    @Query(value = "SELECT NationalId from WORKER w  Where w.nationalId LIKE '90%'UNION SELECT SSN from WORKER w  Where w.ssn LIKE '90%' UNION SELECT NationalId from WORKER_TEMP tw  Where tw.nationalId LIKE '90%' UNION SELECT SSN from WORKER_TEMP tw  Where tw.ssn LIKE '90%' ", nativeQuery = true)
+    List<String> getNationalIds();
+}
