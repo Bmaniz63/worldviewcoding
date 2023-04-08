@@ -1,0 +1,104 @@
+package com.jpmc.cwoc.controllers.cwoc.onboarding;
+
+import com.jpmc.cwoc.common.ViewComboPairVO;
+import com.jpmc.cwoc.cwoc.CwocWorkerSearchService;
+import com.jpmc.cwoc.cwoc.master.DispositionCodeService;
+import com.jpmc.cwoc.cwoc.onboarding.OnboardingRequestService;
+import com.jpmc.cwoc.cwoc.onboarding.OnboardingRequestVO;
+import com.jpmc.cwoc.cwoc.onboarding.OnboardingWorkerDetailsVO;
+import com.jpmc.cwoc.cwoc.resourceMatching.ResourceMatchingDetailsVO;
+import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import io.swagger.annotations.ApiOperation;
+
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+
+@RestController
+@RequestMapping("/cwoc/onboardingRequest")
+@CrossOrigin
+public class OnboardingRequestController {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CwocWorkerSearchService.class);
+
+@Autowired
+    private DispositionCodeService dispositionCodeService;
+
+    @Autowired
+    private OnboardingRequestService onboardingRequestService;
+    @Autowired
+    HttpServletRequest request;
+
+    @ApiOperation(value = "Get the disposition codes")
+    @GetMapping(value = "/getDispositionCode", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<List<ViewComboPairVO>> getDispositionCode() {
+
+        try {
+            List<ViewComboPairVO> dispostionCodes = dispositionCodeService.getAllDispositionCodes();
+            return new ResponseEntity<>(dispostionCodes, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getDispositionCode request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "Gets the getOnboardingRequests")
+    @PostMapping(value = "/getOnboardingRequests", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Page<OnboardingRequestVO>> getOnboardingRequests(@RequestBody OnboardingRequestVO onboardingRequestVO) {
+
+        try {
+            if (onboardingRequestVO.getIsViewAll()) {
+                Page<OnboardingRequestVO> onboardingRequests = onboardingRequestService.getOnboardingRequests(onboardingRequestVO);
+                return new ResponseEntity<>(onboardingRequests, HttpStatus.OK);
+            } else {
+                onboardingRequestVO.setIdManagerSid(request.getHeader("userSID"));
+                Page<OnboardingRequestVO> onboardingRequests = onboardingRequestService.getOnboardingRequestsUnderProcess(onboardingRequestVO);
+                return new ResponseEntity<>(onboardingRequests, HttpStatus.OK);
+            }
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getOnboardingRequests request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "Gets the getOnboardingWorkerDetails")
+    @GetMapping(value = "/getOnboardingWorkerDetails", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<OnboardingWorkerDetailsVO> getOnboardingWorkerDetails(@RequestParam String assignmentId, Boolean isTempWorker) {
+
+        try {
+            OnboardingWorkerDetailsVO onboardingWorkerDetailsVO;
+            if (isTempWorker) {
+                onboardingWorkerDetailsVO = onboardingRequestService.getOnboardingWorkerTempDetails(assignmentId);
+            } else {
+                onboardingWorkerDetailsVO = onboardingRequestService.getOnboardingWorkerDetails(assignmentId);
+            }
+            return new ResponseEntity<>(onboardingWorkerDetailsVO, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getOnboardingWorkerDetails request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+    @ApiOperation(value = "Gets the  Resource Matching Details")
+    @GetMapping(value = "/getResourceMatchingDetails", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<ResourceMatchingDetailsVO> getResourceMatchingDetails(@RequestParam String assignmentId, Boolean isTempWorker) {
+
+        try {
+            ResourceMatchingDetailsVO resourceMatchingDetailsVO;
+            if (isTempWorker) {
+                resourceMatchingDetailsVO = onboardingRequestService.getResourceMatchingTempDetails(assignmentId);
+            } else {
+                resourceMatchingDetailsVO = onboardingRequestService.getResourceMatchingWorkerDetails(assignmentId);
+            }
+            return new ResponseEntity<>(resourceMatchingDetailsVO, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing getOnboardingWorkerDetails request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+}
