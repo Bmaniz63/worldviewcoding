@@ -1,0 +1,56 @@
+package com.jpmc.cwoc.controllers.cwoc.naturalExpiration;
+
+
+import com.jpmc.cwoc.apiCallClasses.GeneralResponceVO;
+import com.jpmc.cwoc.cwoc.naturalExpiration.NaturalExpirationService;
+import com.jpmc.cwoc.service.EmailNotification;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/naturalExpiration")
+@CrossOrigin
+public class NaturalExperationController {
+   @Autowired
+    NaturalExpirationService naturalExpirationService;
+
+    @Autowired
+    EmailNotification emailNotification;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NaturalExperationController.class);
+
+    @GetMapping(value = "/sendNaturalExpirationEmails", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public void sendNaturalExpirationEmails() throws Exception {
+
+        try {
+            naturalExpirationService.generateNaturalExpirationNotfication(1);
+            naturalExpirationService.generateNaturalExpirationNotfication(7);
+            naturalExpirationService.generateNaturalExpirationNotfication(15);
+            naturalExpirationService.generateNaturalExpirationNotfication(30);
+            naturalExpirationService.generateNaturalExpirationNotfication(60);
+
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing sendNaturalExpirationEmails " + ex.getMessage());
+            emailNotification.SendFailedProcessEmailNotification("sendNaturalExpirationEmails",ex.getMessage());
+        }
+    }
+    @GetMapping(value = "/sendNaturalExpirationTermination", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @ResponseBody
+    public void sendNaturalExpirationTermination() throws Exception {
+
+        try {
+            naturalExpirationService.naturalExpirationTermination();
+            
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing sendNaturalExpirationEmails " + ex.getMessage());
+            emailNotification.SendFailedProcessEmailNotification("sendNaturalExpirationTermination",ex.getMessage());
+        }
+    }
+
+}
