@@ -1,0 +1,42 @@
+package com.jpmc.cwoc.controllers.cwoc.gre;
+import com.jpmc.cwoc.cwoc.tririga.TririgaAssignmentUpdateVO;
+import com.jpmc.cwoc.service.EmailNotification;
+import com.jpmc.cwoc.service.gre.TririgaAssignmentLocationUpdateService;
+import com.jpmc.cwoc.tririga.AssignmentLocationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+@RestController
+@RequestMapping("/greWorkLocation")
+@CrossOrigin
+public class GreWorkLocationController {
+
+    @Autowired
+    TririgaAssignmentLocationUpdateService tririgaAssignmentLocationUpdateService;
+    @Autowired
+    AssignmentLocationService assignmentLocationService;
+    @Autowired
+    EmailNotification emailNotification;
+    private static final Logger LOGGER = LoggerFactory.getLogger(GreWorkLocationController.class);
+
+    @GetMapping(value = "/greWorkLocationUpdate", produces = {MediaType.APPLICATION_JSON_VALUE})
+       public void greWorkLocationUpdate() throws Exception {
+
+        try {
+            List<TririgaAssignmentUpdateVO> tririgaAssignmentUpdateVOS=  tririgaAssignmentLocationUpdateService.getTirigaWorkLocation();
+            if(tririgaAssignmentUpdateVOS.size()>0)
+            {
+                assignmentLocationService.updateWorkerLocation(tririgaAssignmentUpdateVOS);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing sendNaturalExpirationEmails " + ex.getMessage());
+            emailNotification.SendFailedProcessEmailNotification("GRE Worker Location Update",ex.getMessage());
+
+        }
+        return;
+    }
+}
