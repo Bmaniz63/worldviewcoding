@@ -1,0 +1,119 @@
+package com.jpmc.cwoc.controllers.cwoc.onboarding;
+
+import com.jpmc.cwoc.controllers.neim.WorkerOperationController;
+import com.jpmc.cwoc.cwoc.onboarding.ObsoleteWorkerVO;
+import com.jpmc.cwoc.cwoc.onboarding.OnboardingOperationService;
+import com.jpmc.cwoc.cwoc.onboarding.OnboardingWorkerDetailsVO;
+import com.jpmc.cwoc.cwoc.worker.WorkerVO;
+import com.jpmc.cwoc.enums.Dispositioncode;
+import com.jpmc.cwoc.exception.CwocInvalidRequestException;
+import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import io.micrometer.core.instrument.util.StringUtils;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
+
+@RestController
+@RequestMapping("/cwoc/onboardingOperation")
+@CrossOrigin
+public class OnboardingOperationsController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OnboardingOperationsController.class);
+
+    @Autowired
+    private OnboardingOperationService onboardingOperationService;
+
+    @ApiOperation(value = "save or update contingent worker")
+    @PostMapping("/saveWorker")
+    public ResponseEntity<OnboardingWorkerDetailsVO> saveWorker(@RequestBody OnboardingWorkerDetailsVO workerVO) {
+        LOGGER.debug("Inside saveWorker method");
+
+        if (workerVO == null)
+            throw new CwocInvalidRequestException("Worker is mandatory");
+
+        try {
+            onboardingOperationService.saveWorker(workerVO);
+            return new ResponseEntity<>(workerVO, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing saveWorker request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "update ID Manager")
+    @PostMapping("/updateIDManager")
+    public ResponseEntity<Integer> assignToMe(@RequestBody String assignmentId) {
+        LOGGER.debug("Inside updateIDManager");
+        if (StringUtils.isBlank(assignmentId)) {
+            throw new CwocInvalidRequestException("assignmentID is required");
+        }
+
+        try {
+            Integer result = onboardingOperationService.assignToMe(assignmentId);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing updateManagerId request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+    @PostMapping(value="/reactivateDispositionCode",produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Integer> reactivateDispositionCode(@RequestBody String assignmentId){
+        if (StringUtils.isBlank(assignmentId))
+            throw new CwocInvalidRequestException("assignmentId is empty");
+
+        try {
+            Integer result = onboardingOperationService.reactivateDispositionCode(assignmentId);
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing reactivatingDispositionCode request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+    @PostMapping(value="/changeDispositionCode",produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Integer> updateDispositionCode(@RequestBody String assignmentId){
+        if (org.apache.commons.lang3.StringUtils.isBlank(assignmentId))
+            throw new CwocInvalidRequestException("assignmentId is empty");
+
+        try {
+            Integer result = onboardingOperationService.updateDispositionCode(assignmentId, Dispositioncode.IN_PROGRESS.getValue());
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing reactivatingDispositionCode request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+    @PostMapping(value="/changeToObsolete",produces = {MediaType.APPLICATION_JSON_VALUE})
+    public ResponseEntity<Integer> changeToObsolete(@RequestBody ObsoleteWorkerVO obsoleteWorkerVO) {
+        if (Objects.nonNull(obsoleteWorkerVO)) {
+
+            try {
+                Integer result = onboardingOperationService.changeToObsolete(obsoleteWorkerVO);
+                return new ResponseEntity<>(result, HttpStatus.OK);
+            } catch (Exception ex) {
+                LOGGER.error("An error occurred while executing reactivatingDispositionCode request {} " + ex.getMessage());
+                throw new CwocInvalidResponseException("An error occurred while processing the request");
+            }
+        }
+        return null;
+    }
+        @PostMapping(value="/generateNationalID",produces = {MediaType.APPLICATION_JSON_VALUE})
+        public ResponseEntity<String> generateNationalIDSSn(@RequestBody String assignmentId) {
+
+            if (StringUtils.isBlank(assignmentId))
+                throw new CwocInvalidRequestException("assignmentId is empty");
+                try {
+                    String result =  onboardingOperationService.generateNationalIDSSn(assignmentId);
+                    return new ResponseEntity<>(result, HttpStatus.OK);
+                } catch (Exception ex) {
+                    LOGGER.error("An error occurred while executing reactivatingDispositionCode request {} " + ex.getMessage());
+                    throw new CwocInvalidResponseException("An error occurred while processing the request");
+                }
+            }
+
+        }
