@@ -1,0 +1,120 @@
+package com.jpmc.cwoc.common.audit;
+
+import com.jpmc.cwoc.common.ExcelExporter;
+import com.jpmc.cwoc.common.WorkerAuditVO;
+import com.jpmc.cwoc.entities.common.audit.WorkerAuditEntity;
+import com.jpmc.cwoc.mappers.WorkerAuditMapper;
+import com.jpmc.cwoc.repository.common.audit.WorkerAuditRepository;
+import com.jpmc.cwoc.utils.AuditInfo;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class WorkerAuditService {
+
+    @Autowired
+    private WorkerAuditRepository workerAuditRepository;
+    @Autowired
+    private WorkerAuditMapper workerAuditMapper;
+
+    @Autowired
+    private ExcelExporter excelExporter;
+
+    public List<WorkerAuditVO> getWorkerAuditBySid(String sid) {
+
+        List<WorkerAuditEntity> lstWorkerAuditEntity = workerAuditRepository.findBySid(sid);
+
+
+        Type listType = new TypeToken<List<WorkerAuditVO>>() {
+        }.getType();
+
+        List<WorkerAuditVO> lstWorkerAuditVo = new ModelMapper().map(lstWorkerAuditEntity, listType);
+
+        return lstWorkerAuditVo;
+    }
+
+    public List<WorkerAuditVO> getWorkerAuditByAssignmentId(String assignmentId) {
+
+        List<WorkerAuditEntity> workerAuditEntityList = workerAuditRepository.findByAssignmentId(assignmentId);
+        String[] exceptionList = {"id", "assignmentID", "firstTouchTime", "sidCreatedTime",  "submittedDate", "phone", "active", "automatedCreateReactivation", "everGreenContract", "expireDate", "isDraft", "preferred", "isFirstEmailSentFlag", "segmentationId"};
+
+
+        List<WorkerAuditVO> workerAuditVOList = new ArrayList<>();
+        workerAuditEntityList.forEach(c -> {
+            if (!Arrays.stream(exceptionList).anyMatch(c.getUpdatedFieldName()::equals)) {
+                WorkerAuditVO workerAuditVO = workerAuditMapper.map(c);
+                workerAuditVOList.add(workerAuditVO);
+            }
+        });
+
+
+        return workerAuditVOList;
+    }
+
+@Transactional
+    public void saveAudit(Long workerId, String sid, String assignmentId, String userId, List<AuditInfo> auditInfoList){
+        List<WorkerAuditEntity> workerAuditEntityList = auditInfoList.stream()
+                .map(p -> new WorkerAuditEntity(sid, workerId, assignmentId, p.getFieldName(), p.getOldValue(), p.getNewValue(), userId,p.getDisplayColumnName()))
+                .collect(Collectors.toList());
+        workerAuditRepository.saveAll(workerAuditEntityList);
+    }
+@Transactional
+    public  void updateAuditIsIdVaultUpdated(String  logIds )
+    {
+        int[] numbers = Arrays.stream(logIds.split(",")).mapToInt(Integer::parseInt).toArray();
+        workerAuditRepository.UpdateAuditIsIdVaultUpdated(numbers);
+
+    }
+    @Transactional
+    public  void updateIDVaultUpdateAttempts(String  logIds, String assignmentId, String errorMessage)
+    {
+        int[] numbers = Arrays.stream(logIds.split(",")).mapToInt(Integer::parseInt).toArray();
+        workerAuditRepository.updateIDVaultUpdateAttempts(numbers, errorMessage);
+        workerAuditRepository.updateAuditSetIsIdVaultUpdatedToNull(numbers, assignmentId);
+    }
+
+
+    @Transactional
+    public  void updateAuditSetIsIdVaultUpdatedToNull(String  logIds, String assignmentId)
+    {
+        int[] numbers = Arrays.stream(logIds.split(",")).mapToInt(Integer::parseInt).toArray();
+
+        workerAuditRepository.updateAuditSetIsIdVaultUpdatedToNull(numbers, assignmentId);
+    }
+
+    @Transactional
+    public  void updateAuditSetIsIdVaultUpdatedToNull(String assignmentId)
+    {
+         workerAuditRepository.updateAuditSetIsIdVaultUpdatedToNull( assignmentId);
+    }
+
+    public void updateAuditWithSid(String sid, String assignmnetId, String user)
+    {
+        workerAuditRepository.UpdateSidByAssignmnetId(sid,assignmnetId,user);
+
+    }
+    public ByteArrayInputStream  getIdvaultAuditErrorReport (String fromDate, String toDate) throws IOException
+    {
+
+       return excelExporter.exportIdVaultUpdateError(workerAuditRepository.getIdvualtUpdateErrorReport(fromDate,toDate));
+    }
+
+
+
+    public void updateLogIdByLogId(Long newWorkerId, Long oldWorkerId)
+    {
+        workerAuditRepository.UpdateLogIdByLogId(newWorkerId,oldWorkerId);
+
+    }
+}
