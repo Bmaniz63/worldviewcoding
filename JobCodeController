@@ -1,0 +1,76 @@
+package com.jpmc.cwoc.controllers.cwoc.referenceData;
+
+import com.jpmc.cwoc.common.JobCodeVO;
+import com.jpmc.cwoc.controllers.cwoc.readyToWork.ReadyToWorkController;
+import com.jpmc.cwoc.cwoc.master.JobCodeService;
+import com.jpmc.cwoc.cwoc.supplier.SupplierRegisterVO;
+import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import com.jpmc.cwoc.neim.WorkerExcelExportService;
+import io.swagger.annotations.ApiOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+
+@RestController
+@RequestMapping("/referenceData/jobCode")
+@CrossOrigin
+public class JobCodeController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobCodeController.class);
+
+    @Autowired
+    private JobCodeService jobCodeService;
+    @Autowired
+    private WorkerExcelExportService workerExcelExportService;
+
+    @ApiOperation(value = "Get JobCode List")
+    @GetMapping(value = "/getJobCodeList", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public List<JobCodeVO> getJobCodeList() {
+        try {
+            return jobCodeService.getJobCodes();
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  getJobCodes request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "save jobCOde ")
+    @PostMapping(value = "/saveJobCode")
+    public Boolean saveJobCode(@RequestBody JobCodeVO jobCodeVO) {
+        try {
+            return  jobCodeService.saveJobCode(jobCodeVO);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  saveJobCode request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+
+    @ApiOperation(value = "Export jobcodes to excel ")
+    @GetMapping(value = "/exportJobCodes")
+    public InputStreamResource exportJobCodes(HttpServletResponse response) throws IOException {
+        response.setHeader("Content-Disposition", "attachment; filename=report.xlsx");
+        response.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        ByteArrayInputStream byteArrayInputStream = workerExcelExportService.exportJobCodes();
+
+        return new InputStreamResource(byteArrayInputStream);
+    }
+
+    @ApiOperation(value = "getJobCode ")
+    @GetMapping(value = "/getJobCode", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public JobCodeVO getJobCode(String jobCode) {
+        try {
+            return jobCodeService.getJobCodeByCode(jobCode);
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing  getJobCode request {} " + ex.getMessage());
+            throw new CwocInvalidResponseException("An error occurred while processing the request");
+        }
+    }
+}
