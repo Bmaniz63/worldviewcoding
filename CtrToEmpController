@@ -1,0 +1,33 @@
+package com.jpmc.cwoc.controllers.cwoc.ctrToEmp;
+
+
+import com.jpmc.cwoc.ctrToEmp.CtrToEmpService;
+import com.jpmc.cwoc.service.EmailNotification;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/ctrToEmp")
+@CrossOrigin
+public class CtrToEmpController {
+
+    @Autowired
+    CtrToEmpService ctrToEmpService;
+    @Autowired
+    EmailNotification emailNotification;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CtrToEmp.class);
+    @GetMapping(value = "/processCtrToEmp", produces = {MediaType.APPLICATION_JSON_VALUE})
+    public void processCtrToEmp() throws Exception {
+
+        try {
+            ctrToEmpService.processCtrToEmpWorkers();
+        } catch (Exception ex) {
+            LOGGER.error("An error occurred while executing sendNaturalExpirationEmails " + ex.getMessage());
+           emailNotification.SendFailedProcessEmailNotification("CtrToEMP",ex.getMessage());
+        }
+        return;
+    }
+}
