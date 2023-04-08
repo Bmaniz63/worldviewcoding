@@ -1,0 +1,136 @@
+package com.jpmc.cwoc.cwoc.communication;
+
+import com.google.common.base.Strings;
+import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentCommunicationEntity;
+import com.jpmc.cwoc.repository.common.email.EmailMessageLogRepository;
+import com.jpmc.cwoc.repository.cwoc.communication.CommunicationRepository;
+import com.jpmc.cwoc.util.rowMappers.CommunicationMapper;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.servlet.http.HttpServletRequest;
+
+import javax.validation.constraints.Email;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+@Service
+public class CommunicationService {
+
+
+    @Autowired
+    HttpServletRequest request;
+
+    @Autowired
+    CommunicationRepository communicationRepository;
+
+    @Autowired
+    EmailMessageLogRepository emailMessageLogRepository;
+
+    @Autowired
+    @Qualifier("cwocjdbcTemplate")
+    private JdbcTemplate jdbcTemplate;
+
+    public List<CommunicationVO> getCommunicationList(String assignmentId) {
+
+        List<CommunicationVO> communicationVOList = jdbcTemplate.query("\n" +
+                "select ac.COMMUNICATIONID,ac.ASSIGNMENTID,ac.COMMENTS,ac.COMMUNICATIONFILE,ac.FILENAME,ac.CREATEDON,ac.CREATEDBY,el.emailbody From ASSIGNMENTCOMMUNICATION ac LEFT OUTER JOIN EMAILMESSAGELOG el on ac.emaillogid=el.emailmsgid where ac.ASSIGNMENTID= :assignmentId AND ac.ACTIVE='1'", new Object[]{assignmentId}, new CommunicationMapper());
+        return communicationVOList;
+    }
+
+    public boolean saveCommunication(MultipartFile file, CommunicationVO communicationVO) throws IOException, ParseException {
+        String userSID = request.getHeader("userSID");
+        boolean alreadyFileSet=false;
+        AssignmentCommunicationEntity assignmentCommunication = null;
+        AssignmentCommunicationEntity assignmentCommunicationEntity = new AssignmentCommunicationEntity();
+        if (communicationVO.getCommunicationId() == 0) {
+            assignmentCommunicationEntity.setCommunicationFile(file.getBytes());
+            assignmentCommunicationEntity.setFileName(file.getOriginalFilename());
+            assignmentCommunicationEntity.setCreatedBy(userSID);
+            assignmentCommunicationEntity.setCreatedOn(new Timestamp(System.currentTimeMillis()));
+            assignmentCommunicationEntity.setComments(communicationVO.getComments());
+            assignmentCommunicationEntity.setId(communicationVO.getAssignmentId());
+            assignmentCommunicationEntity.setActive(true);
+            assignmentCommunication = communicationRepository.save(assignmentCommunicationEntity);
+        } else {
+            Optional<AssignmentCommunicationEntity> assignmentCommunicationEntityOld = communicationRepository.findById(communicationVO.getCommunicationId());
+            if (StringUtils.isEmpty(assignmentCommunicationEntityOld.get().getComments()) || !(
+                    assignmentCommunicationEntityOld.get().getComments().equals(communicationVO.getComments()))) {
+                assignmentCommunicationEntityOld.get().setComments(communicationVO.getComments());
+            }
+           if(Strings.isNullOrEmpty(communicationVO.getFileName()) && !(Objects.nonNull(communicationVO.getAttachment()))){
+               assignmentCommunicationEntityOld.get().setFileName(file.getOriginalFilename());
+               assignmentCommunicationEntityOld.get().setCommunicationFile(file.getBytes());
+               alreadyFileSet=true;
+
+           }
+           if(!(Strings.isNullOrEmpty(communicationVO.getFileName()))&& !(Strings.isNullOrEmpty(file.getOriginalFilename()))){
+               assignmentCommunicationEntityOld.get().setFileName(file.getOriginalFilename());
+               assignmentCommunicationEntityOld.get().setCommunicationFile(file.getBytes());
+               alreadyFileSet=true;
+            }
+
+            if(Strings.isNullOrEmpty(communicationVO.getFileName()) && Objects.nonNull(communicationVO.getAttachment())){
+                if (StringUtils.isEmpty(assignmentCommunicationEntityOld.get().getFileName()) ||
+                        !(assignmentCommunicationEntityOld.get().getFileName().equals(file.getOriginalFilename()))) {
+                    assignmentCommunicationEntityOld.get().setFileName(file.getOriginalFilename());
+                    assignmentCommunicationEntityOld.get().setCommunicationFile(file.getBytes());
+                } else {
+                    assignmentCommunicationEntityOld.get().setFileName(assignmentCommunicationEntityOld.get().getFileName());
+                    assignmentCommunicationEntityOld.get().setCommunicationFile(assignmentCommunicationEntityOld.get().getCommunicationFile());
+                }
+            }
+            else {
+                if(alreadyFileSet==false) {
+                    assignmentCommunicationEntityOld.get().setFileName(assignmentCommunicationEntityOld.get().getFileName());
+                    assignmentCommunicationEntityOld.get().setCommunicationFile(assignmentCommunicationEntityOld.get().getCommunicationFile());
+                }
+            }
+            assignmentCommunicationEntityOld.get().setCreatedOn(new Timestamp(System.currentTimeMillis()));
+            assignmentCommunicationEntityOld.get().setActive(true);
+            assignmentCommunication = communicationRepository.save(assignmentCommunicationEntityOld.get());
+        }
+        return assignmentCommunication != null;
+    }
+
+    public boolean deleteCommunication(int communicationId) {
+        Optional<AssignmentCommunicationEntity> assignmentCommunicationEntity = communicationRepository.findById(communicationId);
+        assignmentCommunicationEntity.get().setActive(false);
+        AssignmentCommunicationEntity assignmentCommunicationEntity1 = communicationRepository.save(assignmentCommunicationEntity.get());
+        return assignmentCommunicationEntity1 != null;
+    }
+
+    public CommunicationVO getCommunication(int communicationId) {
+        Optional<AssignmentCommunicationEntity> assignmentCommunicationEntity = communicationRepository.findById(communicationId);
+        CommunicationVO communicationVO = new CommunicationVO();
+        communicationVO.setAddedBy(assignmentCommunicationEntity.get().getCreatedBy());
+        communicationVO.setDateTime(assignmentCommunicationEntity.get().getCreatedOn().toString());
+        communicationVO.setComments(assignmentCommunicationEntity.get().getComments());
+        communicationVO.setFileName(assignmentCommunicationEntity.get().getFileName());
+        return communicationVO;
+    }
+
+    public ByteArrayInputStream downloadAttachment(int communicationId) throws IOException {
+        byte[] attachment = null;
+        Integer emailLogId = communicationRepository.findEmailId(communicationId);
+          //  if(emailLogId==null) {
+                attachment = communicationRepository.getAttachment(communicationId);
+                 /*else
+            attachment = emailMessageLogRepository.getAttachment(emailLogId);*/
+
+        return new ByteArrayInputStream(attachment);
+    }
+}
