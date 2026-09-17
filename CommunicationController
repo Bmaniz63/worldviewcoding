@@ -1,11 +1,11 @@
-package com.jpmc.cwoc.controllers.cwoc.communication;
+package com.camp.bwac.controllers.bwac.communication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jpmc.cwoc.controllers.cwoc.onboarding.OnboardingOperationsController;
-import com.jpmc.cwoc.cwoc.communication.CommunicationService;
-import com.jpmc.cwoc.cwoc.communication.CommunicationVO;
-import com.jpmc.cwoc.cwoc.contract.ContractMasterVO;
-import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import com.camp.bwac.controllers.bwac.onboarding.OnboardingOperationsController;
+import com.camp.bwac.bwac.communication.CommunicationService;
+import com.camp.bwac.bwac.communication.CommunicationVO;
+import com.camp.bwac.bwac.contract.ContractMasterVO;
+import com.camp.bwac.exception.bwacInvalidResponseException;
 import io.swagger.annotations.ApiOperation;
 import org.hibernate.type.BlobType;
 import org.slf4j.Logger;
@@ -36,7 +36,7 @@ public class CommunicationController {
             return communicationService.getCommunicationList(assignmentId);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getCommunicationList  request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
     @ApiOperation(value = "get Communication ")
@@ -47,7 +47,7 @@ public class CommunicationController {
             return communicationService.getCommunication(communicationId);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getCommunicationList  request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -61,7 +61,7 @@ public class CommunicationController {
             return communicationService.saveCommunication(file,jsonAd);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  saveCommunication request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
 
     }
@@ -73,7 +73,7 @@ public class CommunicationController {
            flag=communicationService.deleteCommunication(communicationId);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  deleteCommunication request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
 return flag;
     }
@@ -91,7 +91,7 @@ return flag;
 
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  saveCommunication request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
          return new InputStreamResource(attachment);
     }
