@@ -1,6 +1,6 @@
-package com.jpmc.cwoc.repository.common.email;
+package com.camp.bwac.repository.common.email;
 
-import com.jpmc.cwoc.entities.common.email.EmailMessageLogEntity;
+import com.camp.bwac.entities.common.email.EmailMessageLogEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

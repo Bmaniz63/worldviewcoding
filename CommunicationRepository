@@ -1,8 +1,8 @@
-package com.jpmc.cwoc.repository.cwoc.communication;
+package com.camp.bwac.repository.bwac.communication;
 
-import com.jpmc.cwoc.cwoc.communication.CommunicationVO;
-import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentCommunicationEntity;
-import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentEntity;
+import com.camp.bwac.bwac.communication.CommunicationVO;
+import com.camp.bwac.entities.bwac.assignment.AssignmentCommunicationEntity;
+import com.camp.bwac.entities.bwac.assignment.AssignmentEntity;
 
 import java.io.ByteArrayInputStream;
 import java.sql.Blob;

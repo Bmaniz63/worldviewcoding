@@ -1,11 +1,11 @@
-package com.jpmc.cwoc.controllers.cwoc.referenceData;
+package com.camp.bwac.controllers.bwac.referenceData;
 
-import com.jpmc.cwoc.common.JobCodeVO;
-import com.jpmc.cwoc.controllers.cwoc.readyToWork.ReadyToWorkController;
-import com.jpmc.cwoc.cwoc.master.JobCodeService;
-import com.jpmc.cwoc.cwoc.supplier.SupplierRegisterVO;
-import com.jpmc.cwoc.exception.CwocInvalidResponseException;
-import com.jpmc.cwoc.neim.WorkerExcelExportService;
+import com.camp.bwac.common.JobCodeVO;
+import com.camp.bwac.controllers.bwac.readyToWork.ReadyToWorkController;
+import com.camp.bwac.bwac.master.JobCodeService;
+import com.camp.bwac.bwac.supplier.SupplierRegisterVO;
+import com.camp.bwac.exception.bwacInvalidResponseException;
+import com.camp.bwac.neim.WorkerExcelExportService;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +37,7 @@ public class JobCodeController {
             return jobCodeService.getJobCodes();
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  getJobCodes request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -48,7 +48,7 @@ public class JobCodeController {
             return  jobCodeService.saveJobCode(jobCodeVO);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  saveJobCode request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -70,7 +70,7 @@ public class JobCodeController {
             return jobCodeService.getJobCodeByCode(jobCode);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  getJobCode request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 }

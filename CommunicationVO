@@ -1,4 +1,4 @@
-package com.jpmc.cwoc.cwoc.communication;
+package com.camp.bwac.bwac.communication;
 
 import com.google.common.primitives.Bytes;
 import lombok.AllArgsConstructor;

@@ -1,10 +1,10 @@
-package com.jpmc.cwoc.cwoc.communication;
+package com.camp.bwac.bwac.communication;
 
 import com.google.common.base.Strings;
-import com.jpmc.cwoc.entities.cwoc.assignment.AssignmentCommunicationEntity;
-import com.jpmc.cwoc.repository.common.email.EmailMessageLogRepository;
-import com.jpmc.cwoc.repository.cwoc.communication.CommunicationRepository;
-import com.jpmc.cwoc.util.rowMappers.CommunicationMapper;
+import com.camp.bwac.entities.bwac.assignment.AssignmentCommunicationEntity;
+import com.camp.bwac.repository.common.email.EmailMessageLogRepository;
+import com.camp.bwac.repository.bwac.communication.CommunicationRepository;
+import com.camp.bwac.util.rowMappers.CommunicationMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +41,7 @@ public class CommunicationService {
     EmailMessageLogRepository emailMessageLogRepository;
 
     @Autowired
-    @Qualifier("cwocjdbcTemplate")
+    @Qualifier("bwacjdbcTemplate")
     private JdbcTemplate jdbcTemplate;
 
     public List<CommunicationVO> getCommunicationList(String assignmentId) {

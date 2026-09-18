@@ -1,12 +1,12 @@
-package com.jpmc.cwoc.cwoc.worker;
+package com.camp.bwac.bwac.worker;
 
-import com.jpmc.cwoc.entities.cwoc.worker.TempWorkerEntity;
-import com.jpmc.cwoc.entities.cwoc.worker.WorkerEntity;
-import com.jpmc.cwoc.mappers.TempWorkerMapper;
-import com.jpmc.cwoc.mappers.WorkerMapper;
-import com.jpmc.cwoc.repository.cwoc.worker.TempWorkerRepository;
-import com.jpmc.cwoc.repository.cwoc.worker.WorkersRepository;
-import com.jpmc.cwoc.repository.cwoc.assignment.AssignmentRepository;
+import com.camp.bwac.entities.bwac.worker.TempWorkerEntity;
+import com.camp.bwac.entities.bwac.worker.WorkerEntity;
+import com.camp.bwac.mappers.TempWorkerMapper;
+import com.camp.bwac.mappers.WorkerMapper;
+import com.camp.bwac.repository.bwac.worker.TempWorkerRepository;
+import com.camp.bwac.repository.bwac.worker.WorkersRepository;
+import com.camp.bwac.repository.bwac.assignment.AssignmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

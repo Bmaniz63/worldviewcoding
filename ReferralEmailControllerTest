@@ -1,7 +1,7 @@
-package com.jpmc.cwoc.controllers.referral;
+package com.camp.bwac.controllers.referral;
 
-import com.jpmc.cwoc.apiCallClasses.GeneralResponceVO;
-import com.jpmc.cwoc.cwoc.referral.ReferralEmailNotificationService;
+import com.camp.bwac.apiCallClasses.GeneralResponceVO;
+import com.camp.bwac.bwac.referral.ReferralEmailNotificationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;

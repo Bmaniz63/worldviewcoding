@@ -1,13 +1,13 @@
-package com.jpmc.cwoc.controllers.cwoc.onboarding;
+package com.camp.bwac.controllers.bwac.onboarding;
 
-import com.jpmc.cwoc.common.ViewComboPairVO;
-import com.jpmc.cwoc.cwoc.CwocWorkerSearchService;
-import com.jpmc.cwoc.cwoc.master.DispositionCodeService;
-import com.jpmc.cwoc.cwoc.onboarding.OnboardingRequestService;
-import com.jpmc.cwoc.cwoc.onboarding.OnboardingRequestVO;
-import com.jpmc.cwoc.cwoc.onboarding.OnboardingWorkerDetailsVO;
-import com.jpmc.cwoc.cwoc.resourceMatching.ResourceMatchingDetailsVO;
-import com.jpmc.cwoc.exception.CwocInvalidResponseException;
+import com.camp.bwac.common.ViewComboPairVO;
+import com.camp.bwac.bwac.bwacWorkerSearchService;
+import com.camp.bwac.bwac.master.DispositionCodeService;
+import com.camp.bwac.bwac.onboarding.OnboardingRequestService;
+import com.camp.bwac.bwac.onboarding.OnboardingRequestVO;
+import com.camp.bwac.bwac.onboarding.OnboardingWorkerDetailsVO;
+import com.camp.bwac.bwac.resourceMatching.ResourceMatchingDetailsVO;
+import com.camp.bwac.exception.bwacInvalidResponseException;
 import io.swagger.annotations.ApiOperation;
 
 import org.slf4j.LoggerFactory;
@@ -22,10 +22,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
-@RequestMapping("/cwoc/onboardingRequest")
+@RequestMapping("/bwac/onboardingRequest")
 @CrossOrigin
 public class OnboardingRequestController {
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CwocWorkerSearchService.class);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(bwacWorkerSearchService.class);
 
 @Autowired
     private DispositionCodeService dispositionCodeService;
@@ -44,7 +44,7 @@ public class OnboardingRequestController {
             return new ResponseEntity<>(dispostionCodes, HttpStatus.OK);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getDispositionCode request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -63,7 +63,7 @@ public class OnboardingRequestController {
             }
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getOnboardingRequests request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -81,7 +81,7 @@ public class OnboardingRequestController {
             return new ResponseEntity<>(onboardingWorkerDetailsVO, HttpStatus.OK);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getOnboardingWorkerDetails request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
     @ApiOperation(value = "Gets the  Resource Matching Details")
@@ -98,7 +98,7 @@ public class OnboardingRequestController {
             return new ResponseEntity<>(resourceMatchingDetailsVO, HttpStatus.OK);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getOnboardingWorkerDetails request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 }

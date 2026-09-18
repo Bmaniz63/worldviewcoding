@@ -1,11 +1,11 @@
-package com.jpmc.cwoc.common.audit;
+package com.camp.bwac.common.audit;
 
-import com.jpmc.cwoc.common.ExcelExporter;
-import com.jpmc.cwoc.common.WorkerAuditVO;
-import com.jpmc.cwoc.entities.common.audit.WorkerAuditEntity;
-import com.jpmc.cwoc.mappers.WorkerAuditMapper;
-import com.jpmc.cwoc.repository.common.audit.WorkerAuditRepository;
-import com.jpmc.cwoc.utils.AuditInfo;
+import com.camp.bwac.common.ExcelExporter;
+import com.camp.bwac.common.WorkerAuditVO;
+import com.camp.bwac.entities.common.audit.WorkerAuditEntity;
+import com.camp.bwac.mappers.WorkerAuditMapper;
+import com.camp.bwac.repository.common.audit.WorkerAuditRepository;
+import com.camp.bwac.utils.AuditInfo;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;

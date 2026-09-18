@@ -1,7 +1,7 @@
-package com.jpmc.cwoc.controllers.cwoc.reports;
+package com.camp.bwac.controllers.bwac.reports;
 
-import com.jpmc.cwoc.common.audit.WorkerAuditService;
-import com.jpmc.cwoc.cwoc.recentlyActivatedSids.RecentlyActivatedSidsRequestVO;
+import com.camp.bwac.common.audit.WorkerAuditService;
+import com.camp.bwac.bwac.recentlyActivatedSids.RecentlyActivatedSidsRequestVO;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -12,7 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/cwoc/reports")
+@RequestMapping("/bwac/reports")
 @CrossOrigin
 public class IdvaultUpdateErrorReportController {
     @Autowired

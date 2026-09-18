@@ -1,9 +1,9 @@
-package com.jpmc.cwoc.controllers.cwoc.naturalExpiration;
+package com.camp.bwac.controllers.bwac.naturalExpiration;
 
 
-import com.jpmc.cwoc.apiCallClasses.GeneralResponceVO;
-import com.jpmc.cwoc.cwoc.naturalExpiration.NaturalExpirationService;
-import com.jpmc.cwoc.service.EmailNotification;
+import com.camp.bwac.apiCallClasses.GeneralResponceVO;
+import com.camp.bwac.bwac.naturalExpiration.NaturalExpirationService;
+import com.camp.bwac.service.EmailNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

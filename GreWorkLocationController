@@ -1,8 +1,8 @@
-package com.jpmc.cwoc.controllers.cwoc.gre;
-import com.jpmc.cwoc.cwoc.tririga.TririgaAssignmentUpdateVO;
-import com.jpmc.cwoc.service.EmailNotification;
-import com.jpmc.cwoc.service.gre.TririgaAssignmentLocationUpdateService;
-import com.jpmc.cwoc.tririga.AssignmentLocationService;
+package com.camp.bwac.controllers.bwac.gre;
+import com.camp.bwac.bwac.tririga.TririgaAssignmentUpdateVO;
+import com.camp.bwac.service.EmailNotification;
+import com.camp.bwac.service.gre.TririgaAssignmentLocationUpdateService;
+import com.camp.bwac.tririga.AssignmentLocationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

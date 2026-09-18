@@ -1,10 +1,10 @@
-package com.jpmc.cwoc.dao.cwoc.ctrToEmp;
+package com.camp.bwac.dao.bwac.ctrToEmp;
 
-import com.jpmc.cwoc.common.CtrToEmpVO;
-import com.jpmc.cwoc.cwoc.worker.TerminateWorkerVO;
-import com.jpmc.cwoc.util.constants.CwocConstants;
-import com.jpmc.cwoc.util.rowMappers.CtrToEmpMapper;
-import com.jpmc.cwoc.util.rowMappers.NaturalExpirationTerminationMapper;
+import com.camp.bwac.common.CtrToEmpVO;
+import com.camp.bwac.bwac.worker.TerminateWorkerVO;
+import com.camp.bwac.util.constants.bwacConstants;
+import com.camp.bwac.util.rowMappers.CtrToEmpMapper;
+import com.camp.bwac.util.rowMappers.NaturalExpirationTerminationMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -16,15 +16,15 @@ import java.util.List;
 @Service
 public class CtrToEmpDao {
     @Autowired
-    @Qualifier("cwocNamedJbcTemplate")
+    @Qualifier("bwacNamedJbcTemplate")
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     public List<CtrToEmpVO> getCtrToDaoList(boolean isTempWorker)
     {
         String query="";
                 if(isTempWorker)
-                    query= CwocConstants.CTR_TO_EMP_TEMP_WORKER;
+                    query= bwacConstants.CTR_TO_EMP_TEMP_WORKER;
                 else
-                    query=CwocConstants.CTR_TO_EMP;
+                    query=bwacConstants.CTR_TO_EMP;
         List<CtrToEmpVO> ctrToEmpVOS = namedParameterJdbcTemplate.query(query,
                 (new MapSqlParameterSource()), new CtrToEmpMapper());
 

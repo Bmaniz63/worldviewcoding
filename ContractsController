@@ -1,11 +1,11 @@
-package com.jpmc.cwoc.controllers.cwoc.referenceData;
+package com.camp.bwac.controllers.bwac.referenceData;
 
-import com.jpmc.cwoc.common.JobCodeVO;
-import com.jpmc.cwoc.cwoc.contract.ContractMasterVO;
-import com.jpmc.cwoc.cwoc.master.ContractService;
-import com.jpmc.cwoc.cwoc.master.JobCodeService;
-import com.jpmc.cwoc.exception.CwocInvalidResponseException;
-import com.jpmc.cwoc.neim.WorkerExcelExportService;
+import com.camp.bwac.common.JobCodeVO;
+import com.camp.bwac.bwac.contract.ContractMasterVO;
+import com.camp.bwac.bwac.master.ContractService;
+import com.camp.bwac.bwac.master.JobCodeService;
+import com.camp.bwac.exception.bwacInvalidResponseException;
+import com.camp.bwac.neim.WorkerExcelExportService;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ public class ContractsController {
             return contractService.getContractList();
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing getContractsList  request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -49,7 +49,7 @@ public class ContractsController {
             return contractService.saveContract(contractMasterVO);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  saveContract request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
 
     }
@@ -72,7 +72,7 @@ public class ContractsController {
             return contractService.getContract(contractNumber);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  getContract request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
     }
 
@@ -83,7 +83,7 @@ public class ContractsController {
             return contractService.getContractByContractNumber(contractNumber);
         } catch (Exception ex) {
             LOGGER.error("An error occurred while executing  getContractByContractNumber request {} " + ex.getMessage());
-            throw new CwocInvalidResponseException("An error occurred while processing the request");
+            throw new bwacInvalidResponseException("An error occurred while processing the request");
         }
 
     }
