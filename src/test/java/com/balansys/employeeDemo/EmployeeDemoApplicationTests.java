@@ -1,4 +1,4 @@
-package com.balansys.employee_demo;
+package com.balansys.employeeDemo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
