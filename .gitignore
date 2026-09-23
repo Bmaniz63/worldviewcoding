@@ -1,0 +1,28 @@
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### IDE ###
+.idea/
+.vscode/
+*.swp
+*.swo
+
+### Environment / secrets ###
+.env
+.env.local
+.env.*.local
+
+### Logs ###
+*.log
+logs/
+
+### Docker ###
+docker-compose.override.yml
+
+### Node (fallback if npm is ever run from repo root) ###
+node_modules/
+
+### Java/Maven (fallback if mvn is ever run from repo root) ###
+target/

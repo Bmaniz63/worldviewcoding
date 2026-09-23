@@ -1,0 +1,34 @@
+### Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+### Spring Boot ###
+HELP.md
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+
+### Environment / secrets ###
+.env
+.env.local
+application-local.properties
+application-local.yml
