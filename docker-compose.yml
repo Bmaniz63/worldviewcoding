@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: employee-demo-db
+    container_name: employee-db
     environment:
       POSTGRES_DB: employeedb
       POSTGRES_USER: postgres
@@ -10,13 +10,20 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d employeedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
       context: ./backend
-    container_name: employee-demo-backend
+    container_name: ems-backend
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/employeedb
       SPRING_DATASOURCE_USERNAME: postgres
@@ -27,7 +34,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: employee-demo-frontend
+    container_name: ems-frontend
     depends_on:
       - backend
     ports:

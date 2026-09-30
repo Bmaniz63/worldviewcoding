@@ -1,0 +1,22 @@
+# Exclude source control history
+.git/
+
+# Exclude local package dependencies (installed natively on container build)
+node_modules/
+venv/
+.pytest_cache/
+
+# Exclude secrets and configurations
+.env
+*.pem
+private.txt
+
+# Exclude local build output and logs
+dist/
+build/
+*.log
+
+# Use an exclamation point (!) to invert a rule (e.g., ignore all markdown except README)
+*.md
+!README.md
+npm-debug.log*
