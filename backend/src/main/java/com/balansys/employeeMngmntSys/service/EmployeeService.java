@@ -1,47 +1,140 @@
 package com.balansys.employeeMngmntSys.service;
 
-import com.balansys.employeeMngmntSys.model.Employee;
+import com.balansys.employeeMngmntSys.model.dto.DepartmentResponse;
+import com.balansys.employeeMngmntSys.model.dto.EmployeeRequest;
+import com.balansys.employeeMngmntSys.model.dto.EmployeeResponse;
+import com.balansys.employeeMngmntSys.model.entity.Department;
+import com.balansys.employeeMngmntSys.model.entity.Employee;
+import com.balansys.employeeMngmntSys.model.exception.DuplicateEmailException;
+import com.balansys.employeeMngmntSys.model.exception.EmployeeNotFoundException;
 import com.balansys.employeeMngmntSys.repository.EmployeeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final DepartmentService departmentService;
 
-    public EmployeeService(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public List<EmployeeResponse> getAllEmployees() {
+
+        return employeeRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public EmployeeResponse getEmployeeById(Long id) {
+
+        Employee employee =
+                employeeRepository.findById(id)
+                        .orElseThrow(() ->
+                                new EmployeeNotFoundException(id));
+
+        return toResponse(employee);
     }
 
-    public Optional<Employee> getEmployeeById(Long id) {
-        return employeeRepository.findById(id);
+    public EmployeeResponse createEmployee(EmployeeRequest request) {
+
+        String email = normalizeEmail(request.getEmail());
+
+        if (employeeRepository.existsByEmailIgnoreCase(email)) {
+            throw new DuplicateEmailException(email);
+        }
+
+        Department department =
+                departmentService.getDepartmentById(
+                        request.getDepartmentId());
+
+        Employee employee = new Employee(
+                request.getFirstName(),
+                request.getLastName(),
+                email,
+                department
+        );
+
+        Employee savedEmployee =
+                employeeRepository.save(employee);
+
+        return toResponse(savedEmployee);
     }
 
-    public List<Employee> createEmployees(List<Employee> employees) {
-        return employeeRepository.saveAll(employees);
-    }
+    public EmployeeResponse updateEmployee(
+            Long id,
+            EmployeeRequest request) {
 
-    public Employee updateEmployee(Long id, Employee updated) {
-        return employeeRepository.findById(id)
-                .map(existing -> {
-                    existing.setFirstName(updated.getFirstName());
-                    existing.setLastName(updated.getLastName());
-                    existing.setEmail(updated.getEmail());
-                    existing.setDepartment(updated.getDepartment());
-                    return employeeRepository.save(existing);
-                })
-                .orElseThrow(() -> new IllegalArgumentException("Employee not found with id " + id));
+        Employee existingEmployee =
+                employeeRepository.findById(id)
+                        .orElseThrow(() ->
+                                new EmployeeNotFoundException(id));
+
+        String email = normalizeEmail(request.getEmail());
+
+        if (employeeRepository
+                .existsByEmailIgnoreCaseAndIdNot(email, id)) {
+
+            throw new DuplicateEmailException(email);
+        }
+
+        Department department =
+                departmentService.getDepartmentById(
+                        request.getDepartmentId());
+
+        existingEmployee.setFirstName(
+                request.getFirstName());
+
+        existingEmployee.setLastName(
+                request.getLastName());
+
+        existingEmployee.setEmail(email);
+
+        existingEmployee.setDepartment(department);
+
+        Employee updatedEmployee =
+                employeeRepository.save(existingEmployee);
+
+        return toResponse(updatedEmployee);
     }
 
     public void deleteEmployee(Long id) {
+
+        if (!employeeRepository.existsById(id)) {
+            throw new EmployeeNotFoundException(id);
+        }
+
         employeeRepository.deleteById(id);
     }
 
+    private String normalizeEmail(String email) {
+
+        return email
+                .trim()
+                .toLowerCase(Locale.ROOT);
+    }
+
+    private EmployeeResponse toResponse(Employee employee) {
+
+        Department department =
+                employee.getDepartment();
+
+        DepartmentResponse departmentResponse =
+                new DepartmentResponse(
+                        department.getId(),
+                        department.getName()
+                );
+
+        return new EmployeeResponse(
+                employee.getId(),
+                employee.getFirstName(),
+                employee.getLastName(),
+                employee.getEmail(),
+                departmentResponse
+        );
+    }
 }
+

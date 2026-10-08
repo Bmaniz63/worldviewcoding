@@ -6,7 +6,10 @@ import {
     deleteEmployee
 } from "./services/employeeService";
 
+import { getDepartments } from "./services/departmentService";
 import "./App.css";
+
+
 
 function App() {
 
@@ -16,7 +19,7 @@ function App() {
         firstName: "",
         lastName: "",
         email: "",
-        department: ""
+        departmentId: ""
     });
 
     const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
@@ -24,15 +27,92 @@ function App() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    const departments = [
-        "IT",
-        "Human Resources",
-        "Finance",
-        "Accounting",
-        "Marketing",
-        "Sales",
-        "Operations"
-    ];
+    // Sorting configuration
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: "asc"
+    });
+
+    // Handle sorting
+    const handleSort = (key) => {
+        setSortConfig((currentSort) => {
+            if (currentSort.key === key) {
+                return {
+                    key,
+                    direction:
+                        currentSort.direction === "asc" ? "desc" : "asc"
+                };
+            }
+
+            return {
+                key,
+                direction: "asc"
+            };
+        });
+    };
+
+
+    // Sort employees based on the current sort configuration
+    const sortedEmployees = [...employees].sort((a, b) => {
+
+        if (!sortConfig.key) {
+            return 0;
+        }
+
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        if (sortConfig.key === "department") {
+            aValue = a.department?.name;
+            bValue = b.department?.name;
+        }
+
+        if (aValue === null || aValue === undefined) {
+            return 1;
+        }
+
+        if (bValue === null || bValue === undefined) {
+            return -1;
+        }
+
+        const comparison = String(aValue)
+            .toLowerCase()
+            .localeCompare(
+                String(bValue).toLowerCase(),
+                undefined,
+                {
+                    numeric: true
+                }
+            );
+
+        return sortConfig.direction === "asc"
+            ? comparison
+            : -comparison;
+    });
+
+
+    // Get sort indicator for column headers
+    const getSortIndicator = (key) => {
+        if (sortConfig.key !== key) {
+            return "↕";
+        }
+
+        return sortConfig.direction === "asc"
+            ? "↑"
+            : "↓";
+    };
+
+    const [departments, setDepartments] = useState([]);
+
+    // const departments = [
+    //     "IT",
+    //     "Human Resources",
+    //     "Finance",
+    //     "Accounting",
+    //     "Marketing",
+    //     "Sales",
+    //     "Operations"
+    // ];
 
     // Load all employees
     const loadEmployees = async () => {
@@ -48,9 +128,21 @@ function App() {
         }
     };
 
-    // Load employees when page starts
+    // Load all departments
+    const loadDepartments = async () => {
+        try {
+            const response = await getDepartments();
+            setDepartments(response.data);
+        } catch (error) {
+            console.error("Error loading departments:", error);
+            setError("Unable to load departments.");
+        }
+    };
+
+    // Load employees and departments when page starts
     useEffect(() => {
         loadEmployees();
+        loadDepartments();
     }, []);
 
     // Handle textbox/dropdown changes
@@ -71,7 +163,7 @@ function App() {
             firstName: "",
             lastName: "",
             email: "",
-            department: ""
+            departmentId: ""
         });
 
         setSelectedEmployeeId(null);
@@ -113,7 +205,7 @@ function App() {
             firstName: employee.firstName,
             lastName: employee.lastName,
             email: employee.email,
-            department: employee.department
+            departmentId: employee.department.id
         });
 
         setMessage("");
@@ -291,26 +383,20 @@ function App() {
                             </label>
 
                             <select
-                                id="department"
-                                name="department"
-                                value={formData.department}
+                                name="departmentId"
+                                value={formData.departmentId}
                                 onChange={handleChange}
-                                required
                             >
-
-                                <option value="">
-                                    -- Select Department --
-                                </option>
+                                <option value="">Select Department</option>
 
                                 {departments.map((department) => (
                                     <option
-                                        key={department}
-                                        value={department}
+                                        key={department.id}
+                                        value={department.id}
                                     >
-                                        {department}
+                                        {department.name}
                                     </option>
                                 ))}
-
                             </select>
 
                         </div>
@@ -362,11 +448,26 @@ function App() {
                     <thead>
 
                         <tr>
-                            <th>ID</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Email</th>
-                            <th>Department</th>
+                            <th className="sortable" onClick={() => handleSort("id")}>
+                                ID {getSortIndicator("id")}
+                            </th>
+
+                            <th className="sortable" onClick={() => handleSort("firstName")}>
+                                First Name {getSortIndicator("firstName")}
+                            </th>
+
+                            <th className="sortable" onClick={() => handleSort("lastName")}>
+                                Last Name {getSortIndicator("lastName")}
+                            </th>
+
+                            <th className="sortable" onClick={() => handleSort("email")}>
+                                Email {getSortIndicator("email")}
+                            </th>
+
+                            <th className="sortable" onClick={() => handleSort("departmentId")}>
+                                Department {getSortIndicator("departmentId")}
+                            </th>
+
                             <th>Actions</th>
                         </tr>
 
@@ -389,7 +490,7 @@ function App() {
 
                         ) : (
 
-                            employees.map((employee) => (
+                            sortedEmployees.map((employee) => (
 
                                 <tr key={employee.id}>
 
@@ -410,7 +511,7 @@ function App() {
                                     </td>
 
                                     <td>
-                                        {employee.department}
+                                        {employee.department?.name}
                                     </td>
 
                                     <td>

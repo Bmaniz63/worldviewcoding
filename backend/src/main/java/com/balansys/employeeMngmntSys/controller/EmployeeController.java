@@ -1,7 +1,11 @@
 package com.balansys.employeeMngmntSys.controller;
 
-import com.balansys.employeeMngmntSys.model.Employee;
+import com.balansys.employeeMngmntSys.model.dto.EmployeeRequest;
+import com.balansys.employeeMngmntSys.model.dto.EmployeeResponse;
 import com.balansys.employeeMngmntSys.service.EmployeeService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,40 +13,55 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
+@RequiredArgsConstructor
 public class EmployeeController {
 
     private final EmployeeService employeeService;
 
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
-
     @GetMapping
-    public List<Employee> getAllEmployees() {
-        return employeeService.getAllEmployees();
+    public ResponseEntity<List<EmployeeResponse>> getEmployees() {
+        return ResponseEntity.ok(
+                employeeService.getAllEmployees()
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
-        return employeeService.getEmployeeById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<EmployeeResponse> getEmployee(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                employeeService.getEmployeeById(id)
+        );
     }
 
     @PostMapping
-    public ResponseEntity<List<Employee>> createEmployee(@RequestBody List<Employee> employees) {
-        return ResponseEntity.ok(employeeService.createEmployees(employees));
+    public ResponseEntity<EmployeeResponse> createEmployee(
+            @Valid @RequestBody EmployeeRequest request) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(employeeService.createEmployee(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee employee) {
-        return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
+    public ResponseEntity<EmployeeResponse> updateEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody EmployeeRequest request) {
+
+        return ResponseEntity.ok(
+                employeeService.updateEmployee(id, request)
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEmployee(
+            @PathVariable Long id) {
+
         employeeService.deleteEmployee(id);
+
         return ResponseEntity.noContent().build();
     }
 
 }
+
+

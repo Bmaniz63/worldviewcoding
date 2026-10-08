@@ -178,4 +178,14 @@ button:hover {
     .employee-table td {
         padding: 8px;
     }
+
+    .employee-table th.sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .employee-table th.sortable:hover {
+        background-color: #e9ecef;
+    }
+
 }
