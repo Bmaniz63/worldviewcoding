@@ -10,6 +10,7 @@ import com.balansys.employeeMngmntSys.model.exception.EmployeeNotFoundException;
 import com.balansys.employeeMngmntSys.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +22,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentService departmentService;
 
+    @Transactional(readOnly = true)
     public List<EmployeeResponse> getAllEmployees() {
 
         return employeeRepository.findAll()
@@ -29,6 +31,7 @@ public class EmployeeService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public EmployeeResponse getEmployeeById(Long id) {
 
         Employee employee =
@@ -39,6 +42,7 @@ public class EmployeeService {
         return toResponse(employee);
     }
 
+    @Transactional
     public EmployeeResponse createEmployee(EmployeeRequest request) {
 
         String email = normalizeEmail(request.getEmail());
@@ -64,6 +68,7 @@ public class EmployeeService {
         return toResponse(savedEmployee);
     }
 
+    @Transactional
     public EmployeeResponse updateEmployee(
             Long id,
             EmployeeRequest request) {
@@ -101,6 +106,7 @@ public class EmployeeService {
         return toResponse(updatedEmployee);
     }
 
+    @Transactional
     public void deleteEmployee(Long id) {
 
         if (!employeeRepository.existsById(id)) {

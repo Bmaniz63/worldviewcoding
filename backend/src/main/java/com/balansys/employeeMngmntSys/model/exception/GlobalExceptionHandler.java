@@ -17,6 +17,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Handle request DepartmentNotFoundException
     @ExceptionHandler(DepartmentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleDepartmentNotFound(
             DepartmentNotFoundException exception) {
@@ -33,6 +34,7 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    // Handle request EmployeeNotFoundException
     @ExceptionHandler(EmployeeNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEmployeeNotFound(
             EmployeeNotFoundException exception) {
@@ -49,6 +51,7 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    // Handle request DuplicateEmailException
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmail(
             DuplicateEmailException exception) {
@@ -65,6 +68,7 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    // Handle request validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException exception) {
@@ -95,6 +99,7 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+// handle other exceptions as needed
     @Getter
     @Setter
     @AllArgsConstructor
@@ -106,6 +111,7 @@ public class GlobalExceptionHandler {
         private String message;
     }
 
+// handle validation errors
     @Getter
     @Setter
     @AllArgsConstructor

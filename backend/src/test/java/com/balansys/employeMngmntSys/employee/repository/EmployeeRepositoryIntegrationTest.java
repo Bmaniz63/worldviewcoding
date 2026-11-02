@@ -10,17 +10,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.TestPropertySource;
+//import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(
-        classes = EmployeeMngmntSysApplication.class
-)
+@SpringBootTest(classes = EmployeeMngmntSysApplication.class)
 @Testcontainers
+@TestPropertySource(properties = {
+        "spring.jpa.hibernate.ddl-auto=validate",
+        "spring.jpa.open-in-view=false",
+        "spring.flyway.enabled=true"
+})
 class EmployeeRepositoryIntegrationTest {
 
     @Container
@@ -37,8 +41,8 @@ class EmployeeRepositoryIntegrationTest {
     @Autowired
     private DepartmentRepository departmentRepository;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+//    @Autowired
+//    private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void setUp() {
@@ -49,11 +53,11 @@ class EmployeeRepositoryIntegrationTest {
         departmentRepository.deleteAll();
 
         // Ensure the case-insensitive email constraint exists.
-        jdbcTemplate.execute("""
-        CREATE UNIQUE INDEX IF NOT EXISTS
-        uk_employees_email_lower
-        ON employees (LOWER(email))
-        """);
+//        jdbcTemplate.execute("""
+//        CREATE UNIQUE INDEX IF NOT EXISTS
+//        uk_employees_email_lower
+//        ON employees (LOWER(email))
+//        """);
     }
 
     @Test
